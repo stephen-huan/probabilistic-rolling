@@ -31,9 +31,9 @@ if graphs[2]:
 ### Graph 3: pmf of the model 
 m = model.Model(R)
 if graphs[3]:
-    graph_rv(X, [m.p_k(x) for x in X], 0, f"Model pmf over {R} rolls")
-    graph_rv(Z, [fz(z) for z in Z], 1, f"Z with batch size {b}")
-    graph_rv(X, p, 2, "X")
+    graph_rv(X, p, 0, "X")
+    graph_rv(Z, [fz(z) for z in Z], 1, f"Z with batch size {B}")
+    graph_rv(X, [m.p_k(x) for x in X], 2, f"Model pmf over {R} rolls")
     plt.title("Random Variable of the Model")
     plt.legend()
     plt.savefig("graphs/graph3.png")
