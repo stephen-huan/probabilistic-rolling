@@ -1,0 +1,12 @@
+premium limits: K, C = 50, 25000 instead of 10, 20000
+-> 11431
+
+number $wa characters total: 18553
+number disabled: 12658
+number left: 5895 
+efficiency factor: 18553/5895 = 3.147
+1/(2*1.25/5895) = 2358 expected rolls 
+
+premium left: 4067
+= 1627 expected rolls
+
