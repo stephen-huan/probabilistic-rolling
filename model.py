@@ -3,7 +3,7 @@ from functools import lru_cache
 import prob
 
 ROLLS = -1             # declare $rolls reset
-ROLLS_AVAILABLE = True # whether $rolls is allowed
+ROLLS_AVAILABLE = False # whether $rolls is allowed
 ROLLS_CYCLE = 8        # how often to use $rolls
 ROLLS_F = 1/ROLLS_CYCLE
 
@@ -16,9 +16,13 @@ class Model():
         # precompute list of expected values for each roll
         self.E = list(map(prob.Ef, range(prob.upper(R) + 1)))
         self.reset()
+        self.p_k = self.__p_k
         if ROLLS_AVAILABLE:
             # generate cmf of p_k
-            self.Fk = prob.prefix_sum(list(map(self.p_k, prob.Z)))
+            self.Fk = prob.prefix_sum(list(map(self.__p_k, prob.Z)))
+            # the largest value k* such that Fk(k*) triggers the roll cutoff
+            self.kp = prob.X[bisect.bisect(self.Fk, ROLLS_F) - 2]
+            assert prob.cmf(self.Fk, self.kp) <= ROLLS_F, "valid cutoff"
             self.rolls_left = 0
 
     def reset(self) -> None:
@@ -26,7 +30,7 @@ class Model():
         # number of rolls left, list of seen kakera values, best value
         self.r, self.l, self.b = self.R, [], float("-inf")
         self.B = self.offset if self.offset > 0 else prob.B
-        self.rolls_used = not ROLLS_AVAILABLE
+        self.rolls_use = ROLLS_AVAILABLE
 
     def update(self, k: int) -> int:
         """ Returns an index if something is worth claiming, otherwise None. """
@@ -41,12 +45,11 @@ class Model():
         # no need to stop early, wait until the batch is complete 
         if self.b > self.E[self.r] and len(self.l) == self.B:
             # use $rolls if emitting this bad of a value has probability 1/8
-            if not self.rolls_used and self.rolls_left > 0 and \
-               prob.cmf(self.Fk, self.b) < ROLLS_F:
+            if self.rolls_use and self.rolls_left > 0 and self.b <= self.kp:
                 delta = prob.upper(self.r + 1) - self.r
                 self.r += delta
                 self.B += delta
-                self.rolls_used = True
+                self.rolls_use = False
                 return ROLLS
 
             return self.l.index(self.b)
@@ -80,11 +83,22 @@ class Model():
         self.coff = prob.prefix_sum([0]*i + list(map(f, range(i, self.R))))
 
     @lru_cache(maxsize=None)
-    def p_k(self, k: int) -> float:
+    def __p_k(self, k: int) -> float:
         """ Probability of emitting the kakera value k. """
         # lazily generate cache on demand
         if not hasattr(self, "poss"):
             self.__cache_p_k()
         i = min(bisect.bisect(self.E, k), self.R)
         return prob.fz(k)*self.cond[i] + prob.fz(k, self.offset)*self.coff[i]
+
+    ### modified introspective models with $rolls
+
+    def p_last(self, k: int) -> float:
+        """ Probability of emtting the kakera value k on the last layer. """
+        return (1 + prob.cmf(prob.Fz, self.kp))*prob.fz(k) if k > self.kp \
+               else prob.fz(k, 2*prob.B)
+
+    def rolls_p_k(self, k: int) -> float:
+        """ Probability of emitting the kakera value k. """
+        return self.__p_k(k) + self.p_r(1)*1
 

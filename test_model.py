@@ -1,8 +1,9 @@
 import random, bisect, sys
 import prob, model
+from testing import EV, apply, adiff, fdiff
 
 random.seed(1)
-ITERS, EPSILON, LIST_EPSILON = 10**5, 0.1, 0.01
+ITERS = 10**5
 count_Fr = [0]*(prob.R + 1)
 count_pr = [0]*(prob.R + 1)
 count_k  = [0]*prob.N
@@ -62,50 +63,19 @@ def E(X, iters: int=ITERS) -> float:
     """ Expected value by repeatedly sampling a random variable. """
     return sum(X() for i in range(iters))/iters
 
-def apply(f, r: range) -> list:
-    """ Applies a function to a range. """
-    return list(map(f, r))
-
-def norm(l: list, f: float=None) -> list:
-    """ Normalizes a list into a pmf by dividing by its sum. """
-    s = sum(l) if f is None else f
-    return [x/s for x in l]
-
-def diff(x: float, y: float, tol: float=EPSILON) -> bool:
-    """ Whether two numbers are sufficiently close. """
-    return abs(x - y) < tol
-
-def adiff(x: float, y: float, s: str, tol: float=EPSILON) -> None:
-    """ Asserts that two numbers are sufficiently close. """
-    assert diff(x, y, tol), f"{s}: {x:.3f} != {y:.3f}"
-
-def ldiff(u: list, v: list, s: str, tol: float=LIST_EPSILON) -> None:
-    """ Whether each number in u is close enough to each number in v. """
-    f = lambda l: [round(x, 3) for x in l]
-    assert len(u) == len(v), f"{s}: lists are not of the same length"
-    assert all(map(lambda x: diff(x[0], x[1], tol), zip(u, v))), \
-        f"{s}:\n{f(u)} !=\n{f(v)}"
-
 if __name__ == "__main__":
     m = model.Model(prob.R)
     # adding rolls changes the random variable
     if model.ROLLS_AVAILABLE:
         ev = sum(simulate(m, i) for i in range(ITERS))/ITERS
         f, fs = model.ROLLS_F, count_rolls[0]/ITERS
-        # the largest kakera value k* such that Fk(k*) triggers the roll cutoff
-        kp = prob.X[bisect.bisect(m.Fk, f) - 2]
         ev_old, Ez = prob.Ef(prob.R), prob.Ef(prob.B)
         # assume that ROLLS_CYCLE forces k* to be less than E[Zb]
-        assert kp < Ez, "mathematical assumption"
-        l1 = norm(count_last)
-        l2 = [(1 + prob.cmf(prob.Fz, kp))*prob.fz(z) if z > kp
-               else prob.fz(z, 2*prob.B) for z in prob.Z]
-        ev_l = sum(z*l2[i] for i, z in enumerate(prob.Z))
+        assert m.kp < Ez, "mathematical assumption"
+
         # pmf of the kakera values emitted by the last layer
-        ldiff(l1, l2, "last layer pmf")
-        # expected value calculation is better than comparing the two lists
-        adiff(sum(z*l1[i] for i, z in enumerate(prob.Z)), ev_l, "last layer EV")
-        ev_new = ev_old + m.p_r(1)*(ev_l - Ez)
+        fdiff(count_last, m.p_last, prob.X, "last layer pmf")
+        ev_new = ev_old + m.p_r(1)*(EV(apply(m.p_last)) - Ez)
         adiff(ev, ev_new, "rolls expected value")
         print(f"using $rolls with a frequency of {fs:.3f}")
         print(f"improves expected value by {ev_new - ev_old:.3f}")
@@ -118,11 +88,11 @@ if __name__ == "__main__":
 
     ### testing introspection 
     # probability of getting to r rolls left
-    ldiff(norm(count_Fr, ITERS), apply(m.F_r, range(prob.R + 1)), "cdf of f")
+    fdiff(count_Fr, m.F_r, range(prob.R + 1), "cdf of f", True)
     # probability of emitting a value at r rolls left
-    ldiff(norm(count_pr), apply(m.p_r, range(prob.R + 1)), "pdf of f")
+    fdiff(count_pr, m.p_r, range(prob.R + 1), "pdf of f")
     # probability of emitting a kakera value of k
-    ldiff(norm(count_k), apply(m.p_k, prob.X), "pdf of k")
-    # probability distribution times the value equals the expected value 
-    adiff(sum(x*m.p_k(x) for x in prob.X), prob.Ef(prob.R), "pmf k vs E")
+    fdiff(count_k, m.p_k, prob.X, "pdf of k")
+    # expected value of the kakera pmf is the expected value of the model 
+    adiff(EV(apply(m.p_k)), prob.Ef(prob.R), "pmf k vs E")
 
