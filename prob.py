@@ -26,12 +26,12 @@ def prefix_sum(l: list) -> list:
 F = prefix_sum(p)
 # expected value prefix sum
 ev = prefix_sum([X[i]*p[i] for i in range(N)])
-
-d = {x: i for i, x in enumerate(X)}
+# value to index
+D = {x: i for i, x in enumerate(X)}
 
 def f(x: float) -> float:
     """ pmf of X """
-    return p[d[x]]
+    return p[D[x]]
 
 # Z is the r.v. corresponding to sampling X b times and taking the max value 
 # Z has the same support set as X but a different pmf
@@ -41,20 +41,28 @@ Z, BATCHES = list(X), R//B
 Fzs = [[pow(v, b) for v in F] for b in range(B + 1)]
 # expected value prefix sum similar to X 
 evzs = [prefix_sum([X[i]*(Fzs[b][i + 1] - Fzs[b][i]) for i in range(N)])
-        for b in range(B + 1)]
+        for b in range(len(Fzs))]
 Fz = Fzs[B]
 
 @lru_cache(maxsize=None)
 def fz(z: float, b: int=B) -> float:
     """ pmf of Z """
-    i = d[z]
-    return pow(F[i + 1], b) - pow(F[i], b)
+    return pow(F[D[z] + 1], b) - pow(F[D[z]], b)
+
+def lower(r: int) -> int:
+    """ Returns the largest value n such that n <= r and n % B == 0. """
+    return r - (r % B)
+
+def upper(r: int) -> int:
+    """ Returns the smallest value n such that n >= r and n % B == 0. """
+    return r + (-r % B)
 
 ### functions
 
-def cmf(F: list, u: float, left: bool=False) -> float:
-    """ Finds the value of the cmf at a value not in the underlying r.v. """
-    return F[(bisect.bisect_left if left else bisect.bisect_right)(X, u)]
+def cmf(F: list, u: float) -> float:
+    """ Finds the value of the cmf at a value in/not in the underlying r.v. """
+    # use F if u is in the support set, otherwise binary search
+    return F[D[u] + 1] if u in D else F[bisect.bisect(X, u)]
 
 def query(prefix: list, i: int, j: int) -> float:
     """ Finds the sum of a list between two indexes. """

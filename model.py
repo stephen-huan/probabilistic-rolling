@@ -3,48 +3,50 @@ from functools import lru_cache
 import prob
 
 ROLLS = -1             # declare $rolls reset
-ROLLS_AVAILABLE = False # whether $rolls is allowed
-ROLLS_CUTOFF = 1/8     # how often to use $rolls
+ROLLS_AVAILABLE = True # whether $rolls is allowed
+ROLLS_CYCLE = 8        # how often to use $rolls
+ROLLS_F = 1/ROLLS_CYCLE
 
 class Model():
 
     """ Models interactions with the character kakera random variable. """
 
     def __init__(self, R: int) -> None:
-        # offset if number of rolls is not a multiple of the batch size
         self.R, self.offset = R, R % prob.B
         # precompute list of expected values for each roll
-        self.E = list(map(prob.Ef, range(R + 1)))
+        self.E = list(map(prob.Ef, range(prob.upper(R) + 1)))
         self.reset()
         if ROLLS_AVAILABLE:
             # generate cmf of p_k
             self.Fk = prob.prefix_sum(list(map(self.p_k, prob.Z)))
+            self.rolls_left = 0
 
     def reset(self) -> None:
         """ Reset to the inital model, faster than creating a new model. """
         # number of rolls left, list of seen kakera values, best value
         self.r, self.l, self.b = self.R, [], float("-inf")
-        self.off = self.R % prob.B
-        self.rolls = ROLLS_AVAILABLE
+        self.B = self.offset if self.offset > 0 else prob.B
+        self.rolls_used = not ROLLS_AVAILABLE
 
     def update(self, k: int) -> int:
         """ Returns an index if something is worth claiming, otherwise None. """
-        # in the case of an offset, remove the offset first
-        B = self.off if self.off is not None else prob.B
-        # new batch, reset seen and b
-        if len(self.l) == B:
-            self.l, self.b, self.off, B = [], -float("inf"), None, prob.B
+        # new batch, reset seen and b, the max of the samples we've seen
+        if len(self.l) == self.B:
+            self.l, self.b, self.B = [], -float("inf"), prob.B
         # update variables with new information
         self.l.append(k)
         self.b = max(self.b, k)
         self.r -= 1
 
         # no need to stop early, wait until the batch is complete 
-        if self.b > self.E[self.r] and len(self.l) == B:
+        if self.b > self.E[self.r] and len(self.l) == self.B:
             # use $rolls if emitting this bad of a value has probability 1/8
-            if self.rolls and self.Fk[prob.d[self.b] + 1] <= ROLLS_CUTOFF:
-                self.r += len(self.l)
-                self.rolls = False
+            if not self.rolls_used and self.rolls_left > 0 and \
+               prob.cmf(self.Fk, self.b) < ROLLS_F:
+                delta = prob.upper(self.r + 1) - self.r
+                self.r += delta
+                self.B += delta
+                self.rolls_used = True
                 return ROLLS
 
             return self.l.index(self.b)

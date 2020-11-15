@@ -1,4 +1,4 @@
-import random, bisect
+import random, bisect, sys
 import prob, model
 
 random.seed(1)
@@ -7,25 +7,32 @@ count_Fr = [0]*(prob.R + 1)
 count_pr = [0]*(prob.R + 1)
 count_k  = [0]*prob.N
 count_rolls = [0]
+count_last = [0]*prob.N
 
 def sample(X: list, F: list) -> float:
     """ Samples a value from a random variable. """
     p = random.random()
     return X[bisect.bisect(F, p) - 1]
 
-def simulate(m: model.Model) -> float:
+def simulate(m: model.Model=model.Model(prob.R), index: int=0) -> float:
     """ Simulates a game. """
     m.reset()
+    # give the model a roll every ROLLS_CYCLE claim iterations
+    if model.ROLLS_AVAILABLE and index % model.ROLLS_CYCLE == 0:
+        m.rolls_left += 1
     l = []
     # offset if number of rolls is not a multiple of the batch size
     offset = prob.R % prob.B
+    # in the case of an offset, remove the offset first
+    size = offset if offset > 0 else prob.B
     r = prob.R
+    used = False
     while r > 0:
-        count_Fr[r] += 1
-        # new batch, reset the seen elements
-        # in the case of an offset, remove the offset first
-        if len(l) == prob.B or len(l) == offset:
-            l, offset = [], -1
+        if r <= prob.R:
+            count_Fr[r] += 1
+        # new batch, reset seen and assume offset has been taken care of
+        if len(l) == size:
+            l, size = [], prob.B
         k = sample(prob.X, prob.F)
         l.append(k)
         # give kakera value to the model 
@@ -33,13 +40,19 @@ def simulate(m: model.Model) -> float:
         if i is not None:
             if i == model.ROLLS:
                 assert model.ROLLS_AVAILABLE, "$rolls is not allowed"
+                assert m.rolls_left > 0, "model doesn't have available rolls"
                 count_rolls[0] += 1
                 # $rolls resets the batch instead of adding the batch size
-                r += len(l)
+                delta = prob.upper(r) - r + 1
+                r += delta
+                size += delta
+                m.rolls_left -= 1
             else:
-                count_pr[r] += 1
-                count_k[prob.d[l[i]]] += 1
                 assert 0 <= i < len(l), "model did not give a valid index"
+                count_pr[r] += 1
+                count_k[prob.D[l[i]]] += 1
+                if r == 1:
+                    count_last[prob.D[l[i]]] += 1
                 return l[i]
         r -= 1
     # model didn't claim, kakera value of 0
@@ -75,6 +88,30 @@ def ldiff(u: list, v: list, s: str, tol: float=LIST_EPSILON) -> None:
 
 if __name__ == "__main__":
     m = model.Model(prob.R)
+    # adding rolls changes the random variable
+    if model.ROLLS_AVAILABLE:
+        ev = sum(simulate(m, i) for i in range(ITERS))/ITERS
+        f, fs = model.ROLLS_F, count_rolls[0]/ITERS
+        # the largest kakera value k* such that Fk(k*) triggers the roll cutoff
+        kp = prob.X[bisect.bisect(m.Fk, f) - 2]
+        ev_old, Ez = prob.Ef(prob.R), prob.Ef(prob.B)
+        # assume that ROLLS_CYCLE forces k* to be less than E[Zb]
+        assert kp < Ez, "mathematical assumption"
+        l1 = norm(count_last)
+        l2 = [(1 + prob.cmf(prob.Fz, kp))*prob.fz(z) if z > kp
+               else prob.fz(z, 2*prob.B) for z in prob.Z]
+        ev_l = sum(z*l2[i] for i, z in enumerate(prob.Z))
+        # pmf of the kakera values emitted by the last layer
+        ldiff(l1, l2, "last layer pmf")
+        # expected value calculation is better than comparing the two lists
+        adiff(sum(z*l1[i] for i, z in enumerate(prob.Z)), ev_l, "last layer EV")
+        ev_new = ev_old + m.p_r(1)*(ev_l - Ez)
+        adiff(ev, ev_new, "rolls expected value")
+        print(f"using $rolls with a frequency of {fs:.3f}")
+        print(f"improves expected value by {ev_new - ev_old:.3f}")
+        assert fs <= f, "overusing rolls"
+        sys.exit()
+
     # whether the theoretical model aligns with the empirical expected value
     # no way to know whether this "optimal" value is truly optimal however
     adiff(E(lambda: simulate(m)), prob.Ef(prob.R), "expected value")
@@ -88,6 +125,4 @@ if __name__ == "__main__":
     ldiff(norm(count_k), apply(m.p_k, prob.X), "pdf of k")
     # probability distribution times the value equals the expected value 
     adiff(sum(x*m.p_k(x) for x in prob.X), prob.Ef(prob.R), "pmf k vs E")
-
-    # print(count_rolls[0]/ITERS)
 
