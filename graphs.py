@@ -4,7 +4,7 @@ from prob import *
 import model
 
 graphs = [None] + [0]*10
-graphs[5] = 0
+graphs[4] = 1
 fig = plt.figure(tight_layout=True)
 
 def graph_rv(X: list, p: list, i: int=0, label: str=None) -> None:
@@ -13,43 +13,55 @@ def graph_rv(X: list, p: list, i: int=0, label: str=None) -> None:
     plt.ylabel("Probability")
     plt.xlabel("Value")
 
+def model_pmf(r: int=R, b: int=B,
+        ra: bool=model.ROLLS_AVAILABLE, rc: int=model.ROLLS_CYCLE) -> float:
+    """ pmf for the given parameterized model. """
+    m = model.Model(r, b, ra, rc)
+    return [m.p_k(x) for x in X]
+
+ev, var = lambda *args: E(model_pmf(*args)), lambda *args: Var(model_pmf(*args))
+
 ### Graph 1: pmf of X
-if graphs[1]:
+g = 1
+if graphs[g]:
     graph_rv(X, p)
     plt.title("Random Variable X")
-    # plt.savefig("graphs/graph1.png")
+    # plt.savefig(f"graphs/graph{g}.png")
     plt.show()
 
 ### Graph 2: pmf of Zn
-if graphs[2]:
+g = 2
+if graphs[g]:
     B = 10
-    for i, b in enumerate([1, B]):
+    for i, b in enumerate([1, 5, B]):
         graph_rv(Z, [fz(z, b) for z in Z], i, f"Z with batch size {b}")
     plt.title("Random Variable Zs")
     plt.legend()
-    # plt.savefig("graphs/graph2.png")
+    # plt.savefig(f"graphs/graph{g}.png")
     plt.show()
 
 ### Graph 3: pmf of the model 
-if graphs[3]:
+g = 3
+if graphs[g]:
     R, B = 30, 10
     m = model.Model(R)
     graph_rv(X, p, 0, "X")
-    graph_rv(Z, [fz(z) for z in Z], 1, f"Z with batch size {B}")
-    graph_rv(X, [m.p_k(x) for x in X], 2, f"Model pmf over {R} rolls")
+    graph_rv(Z, [fz(z, B) for z in Z], 1, f"Z with batch size {B}")
+    graph_rv(X, model_pmf(R, B, False), 2, f"Model pmf over {R} rolls")
     plt.title("Random Variable of the Model")
     plt.legend()
-    # plt.savefig("graphs/graph3.png")
+    # plt.savefig(f"graphs/graph{g}.png")
     plt.show()
 
 ### Graph 4: the E[t] dropoff over time
-if graphs[4]:
+g = 4
+if graphs[g]:
     R, B = 300, 10
     BATCHES = R//B
-    x, y = list(range(R + 1)), [Er(0, r) for r in range(R + 1)]
+    x, y = list(range(R + 1)), [ev(r, 1, False) for r in range(R + 1)]
     # xz = [b*B for b in range(BATCHES + 1)]
     # yz = [Er(1, b) for b in range(BATCHES + 1)]
-    yf = list(map(Ef, range(R + 1)))
+    yf = [ev(r, B, False) for r in x]
     plt.plot(x, y, label="batch size of 1")
     # plt.plot(xz, yz, label=f"batch size of {B}")
     plt.plot(x, yf, label=f"batch size of {B}")
@@ -57,11 +69,40 @@ if graphs[4]:
     plt.ylabel("Expected Value (kakera)")
     plt.xlabel("Time (rolls)")
     plt.legend()
-    # plt.savefig("graphs/graph4.png")
+    # plt.savefig(f"graphs/graph{g}.png")
     plt.show()
 
-### Graph 5: the derivative E[t] with respect to t
-if graphs[5]:
+### Graph 5: expected value of the model over batch size
+g = 5
+if graphs[g]:
+    R, B = 50, 52
+    x, y = list(range(1, B + 1)), [ev(R, b, False) for b in range(1, B + 1)]
+    plt.plot(x, y)
+    plt.title("Model Expected Value over Batch Size")
+    plt.ylabel("Expected Value (kakera)")
+    plt.xlabel("Batch Size")
+    # plt.savefig(f"graphs/graph{g}.png")
+    plt.show()
+
+### Graph 6: expected value of the model over rolls and batch size
+g = 6
+if graphs[g]:
+    R, B = 100, 100
+    grid = [[(r, b) for b in range(1, B + 1)] for r in range(1, R + 1)]
+    z = [[ev(r, b, False) for r, b in row] for row in grid]
+    ax = fig.add_subplot(111, projection="3d")
+    ax.plot_surface(*zip(*[zip(*row) for row in grid]), np.array(z),
+                    cmap="viridis")
+    ax.set_title("Expected Value over Rolls and Batch Size")
+    ax.set_zlabel("Expected Value")
+    plt.ylabel("Batch Size")
+    plt.xlabel("Rolls")
+    # plt.savefig(f"graphs/graph{g}.png")
+    plt.show()
+
+### Graph 7: the derivative E[t] with respect to t
+g = 7
+if graphs[g]:
     R = 30
     x, yf = list(range(R + 1)), list(map(Ef, range(R + 1)))
     yp = [yf[i + 1] - yf[i] for i in range(len(yf) - 1)]
@@ -69,11 +110,12 @@ if graphs[5]:
     plt.title("Change over Time")
     plt.ylabel("Change in Expected Value (kakera)")
     plt.xlabel("Time (rolls)")
-    # plt.savefig("graphs/graph5.png")
+    # plt.savefig(f"graphs/graph{g}.png")
     plt.show()
 
-### Graph 6: unit price of rolls
-if graphs[6]:
+### Graph 8: unit price of rolls
+g = 8
+if graphs[g]:
     grid = [[(r, k) for k in range(1, 11)] for r in range(R + 1)]
     z = [[price(r, k)/k for r, k in row] for row in grid]
     ax = fig.add_subplot(111, projection="3d")
@@ -83,41 +125,37 @@ if graphs[6]:
     ax.set_zlabel("Unit Price of Rolls (Kakera/Roll)")
     ax.set_ylabel("Number of Rolls Sold")
     ax.set_xlabel("Buyer's Number of Rolls")
-    # plt.savefig("graphs/graph6.png")
+    # plt.savefig(f"graphs/graph{g}.png")
     plt.show()
 
-### Graph 7: variance of the model over rolls
-def model_pmf(r: int=R, b: int=B,
-        ra: bool=model.ROLLS_AVAILABLE, rc: int=model.ROLLS_CYCLE) -> float:
-    """ pmf for the given parameterized model. """
-    m = model.Model(r, b, ra, rc)
-    return [m.p_k(x) for x in X]
-
-var = lambda *args: Var(model_pmf(*args))
-
-if graphs[7]:
-    R, B = 600, 100
-    x, y = list(range(R + 1)), [var(r, B) for r in range(R + 1)]
+### Graph 9: variance of the model over rolls
+g = 9
+if graphs[9]:
+    R, B = 600, 600
+    x, y = list(range(R + 1)), [var(r, B, False) for r in range(R + 1)]
     plt.plot(x, y)
     plt.title("Model Variance over Time")
     plt.ylabel("Variance (kakera^2)")
     plt.xlabel("Rolls")
-    plt.savefig("graphs/graph7.png")
+    # plt.savefig(f"graphs/graph{g}.png")
     plt.show()
 
-### Graph 8: variance over batch size 
-if graphs[8]:
-    R = 100
-    x, y = list(range(1, B + 1)), [var(R, b) for b in range(1, B + 1)]
+### Graph 10: variance over batch size 
+g = 10
+if graphs[g]:
+    R, B = 100, 100
+    x, y = list(range(1, B + 1)), [var(R, b, False) for b in range(1, B + 1)]
     plt.plot(x, y)
     plt.title("Model Variance over Batch Size")
     plt.ylabel("Variance (kakera^2)")
     plt.xlabel("Batch Size")
-    plt.savefig("graphs/graph8.png")
+    # # plt.savefig(f"graphs/graph{g}.png")
     plt.show()
 
-### Graph 9: variance over rolls and batch size
-if graphs[9]:
+### Graph 11: variance over rolls and batch size
+g = 11
+if graphs[g]:
+    R, B = 300, 300
     grid = [[(r, b) for b in range(1, B + 1)] for r in range(1, R + 1)]
     z = [[var(r, b, False) for r, b in row] for row in grid]
     ax = fig.add_subplot(111, projection="3d")
@@ -127,6 +165,6 @@ if graphs[9]:
     ax.set_zlabel("Variance")
     plt.ylabel("Batch Size")
     plt.xlabel("Rolls")
-    plt.savefig("graphs/graph9.png")
+    # plt.savefig(f"graphs/graph{g}.png")
     plt.show()
 

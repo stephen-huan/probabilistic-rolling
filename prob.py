@@ -13,7 +13,7 @@ p = [0.05, 0.08, 0.1, 0.12, 0.17, 0.22, 0.1,  0.1, 0.05, 0.01]
 assert sum(p) == 1
 
 # number of discrete values, number of rolls, number of rolls per batch
-N, R, B = len(X), 30, 100
+N, R, B = len(X), 30, 1000
 # value to index
 D = {x: i for i, x in enumerate(X)}
 
