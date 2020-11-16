@@ -3,7 +3,9 @@ import numpy as np
 from prob import *
 import model
 
-graphs = [None] + [0]*10
+ROLLS = True # whether to include the $rolls model
+
+graphs = [None] + [0]*20
 graphs[4] = 1
 fig = plt.figure(tight_layout=True)
 
@@ -48,9 +50,11 @@ if graphs[g]:
     graph_rv(X, p, 0, "X")
     graph_rv(Z, [fz(z, B) for z in Z], 1, f"Z with batch size {B}")
     graph_rv(X, model_pmf(R, B, False), 2, f"Model pmf over {R} rolls")
+    if ROLLS:
+        graph_rv(X, model_pmf(R, B, True), 3, f"Model pmf with $rolls")
     plt.title("Random Variable of the Model")
     plt.legend()
-    # plt.savefig(f"graphs/graph{g}.png")
+    # plt.savefig(f"graphs/graph{g}_{'rolls' if ROLLS else ''}.png")
     plt.show()
 
 ### Graph 4: the E[t] dropoff over time
@@ -62,14 +66,17 @@ if graphs[g]:
     # xz = [b*B for b in range(BATCHES + 1)]
     # yz = [Er(1, b) for b in range(BATCHES + 1)]
     yf = [ev(r, B, False) for r in x]
+    yr = [ev(r, B, True) for r in x[1:]]
     plt.plot(x, y, label="batch size of 1")
     # plt.plot(xz, yz, label=f"batch size of {B}")
     plt.plot(x, yf, label=f"batch size of {B}")
+    if ROLLS:
+        plt.plot(x[1:], yr, label=f"with $rolls")
     plt.title("Expected Value over Time")
     plt.ylabel("Expected Value (kakera)")
     plt.xlabel("Time (rolls)")
     plt.legend()
-    # plt.savefig(f"graphs/graph{g}.png")
+    # plt.savefig(f"graphs/graph{g}_{'rolls' if ROLLS else ''}.png")
     plt.show()
 
 ### Graph 5: expected value of the model over batch size
@@ -78,10 +85,14 @@ if graphs[g]:
     R, B = 50, 52
     x, y = list(range(1, B + 1)), [ev(R, b, False) for b in range(1, B + 1)]
     plt.plot(x, y)
+    if ROLLS:
+        yr = [ev(R, b, True) for b in range(1, B + 1)]
+        plt.plot(x, yr, label=f"with $rolls")
+        plt.legend()
     plt.title("Model Expected Value over Batch Size")
     plt.ylabel("Expected Value (kakera)")
     plt.xlabel("Batch Size")
-    # plt.savefig(f"graphs/graph{g}.png")
+    # plt.savefig(f"graphs/graph{g}_{'rolls' if ROLLS else ''}.png")
     plt.show()
 
 ### Graph 6: expected value of the model over rolls and batch size
@@ -134,10 +145,14 @@ if graphs[9]:
     R, B = 600, 600
     x, y = list(range(R + 1)), [var(r, B, False) for r in range(R + 1)]
     plt.plot(x, y)
+    if ROLLS:
+        yr = [var(r, B, True) for r in range(1, R + 1)]
+        plt.plot(x[1:], yr, label=f"with $rolls")
+        plt.legend()
     plt.title("Model Variance over Time")
     plt.ylabel("Variance (kakera^2)")
     plt.xlabel("Rolls")
-    # plt.savefig(f"graphs/graph{g}.png")
+    plt.savefig(f"graphs/graph{g}_{'rolls' if ROLLS else ''}.png")
     plt.show()
 
 ### Graph 10: variance over batch size 
@@ -146,10 +161,14 @@ if graphs[g]:
     R, B = 100, 100
     x, y = list(range(1, B + 1)), [var(R, b, False) for b in range(1, B + 1)]
     plt.plot(x, y)
+    if ROLLS:
+        yr = [var(R, b, True) for b in range(1, B + 1)]
+        plt.plot(x, yr, label=f"with $rolls")
+        plt.legend()
     plt.title("Model Variance over Batch Size")
     plt.ylabel("Variance (kakera^2)")
     plt.xlabel("Batch Size")
-    # # plt.savefig(f"graphs/graph{g}.png")
+    plt.savefig(f"graphs/graph{g}_{'rolls' if ROLLS else ''}.png")
     plt.show()
 
 ### Graph 11: variance over rolls and batch size

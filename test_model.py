@@ -1,6 +1,6 @@
 import random, bisect, sys
 import prob, model
-from testing import apply, adiff, fdiff
+from testing import norm, apply, adiff, fdiff
 
 random.seed(1)
 ITERS = 10**5
@@ -85,6 +85,8 @@ if __name__ == "__main__":
         fdiff(count_pr, m.p_r, range(prob.R + 1), "pdf of f")
         # pmf of the kakera values emitted by the last layer
         fdiff(count_last, m.p_last, prob.X, "last layer pmf")
+        # changed pmf of emitting a kakera value overall as a result
+        fdiff(count_k, m.p_k, prob.X, "pdf of k")
 
         ### expected value
         ev_new = ev_old + m.p_r(1)*(prob.E(apply(m.p_last)) - Ez)

@@ -7,8 +7,6 @@ dynamic programming on the expected value of a random variable.
 
 TODO:
 - White paper
-- graph variance vs # rolls, batch size, with/without $rolls
-- finish $rolls introspection
 - rewrite main to use model 
 - long-running average pmf with fast polynomial exponentiation
 (like fast exponentiation but with convolution)
