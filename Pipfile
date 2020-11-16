@@ -6,6 +6,8 @@ name = "pypi"
 [packages]
 mip = "*"
 matplotlib = "*"
+numpy = "*"
+scipy = "*"
 
 [dev-packages]
 

@@ -2,10 +2,6 @@ import prob
 # comparing two scalars, comparing two lists, allowed distance from 1 
 EPSILON, LIST_EPS, DIST = 0.1, 0.01, 10**-3
 
-def EV(l: list, domain: list=prob.X) -> float:
-    """ Expected value of a pmf represented by a list. """
-    return sum(domain[i]*l[i] for i in range(len(domain)))
-
 def apply(f, r: range=prob.X) -> list:
     """ Applies a function to a range. """
     return list(map(f, r))
@@ -48,7 +44,7 @@ def pdiff(u: list, v: list, s: str, is_cmf: bool=False,
     else:
         assert pmf(u) and pmf(v), f"{s}: list is not a valid pmf"
         # expected value calculation is better than element-wise comparison
-        adiff(EV(u, domain), EV(v, domain), s + " expected value")
+        adiff(prob.E(u, domain), prob.E(v, domain), s + " expected value")
     f = lambda l: [round(x, 3) for x in l]
     assert all(map(lambda x: diff(x[0], x[1], tol), zip(u, v))), \
         f"{s}:\n{f(u)} !=\n{f(v)}"
