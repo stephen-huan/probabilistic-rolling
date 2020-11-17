@@ -1,6 +1,6 @@
 import random, bisect, sys
-import prob, model
-from testing import norm, apply, adiff, fdiff
+from . import prob, model
+from .testing import norm, apply, adiff, fdiff
 
 random.seed(1)
 ITERS = 10**5

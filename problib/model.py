@@ -1,6 +1,6 @@
 import bisect
 from functools import lru_cache
-import prob
+from . import prob
 
 ROLLS = -1             # declare $rolls reset
 ROLLS_AVAILABLE = True # whether $rolls is allowed
@@ -71,15 +71,23 @@ class Model():
 
     def status_quo(self, r: int, k: int) -> float:
         """ Represents the current value if we don't buy or sell. """
-        return max(Eloss(r, k), self.Ef(r))
+        return max(self.Eloss(r, k), self.Ef(r))
 
-    def buy(self, r: int, k: int, b: int) -> float:
+    def __buy(self, r: int, k: int, b: int) -> float:
         """ Finds the price at which we are indifferent to buying b rolls. """
         return self.Ef(r + b) - self.status_quo(r, k)
 
-    def sell(self, r: int, k: int) -> float:
+    def buy(self, b: int=None) -> float:
+        """ Calls buy for the current parameters of the model. """
+        return self.__buy(self.r, self.b, self.B if b is None else b)
+
+    def __sell(self, r: int, k: int) -> float:
         """ Finds the price at which we are indifferent to selling r rolls. """
         return self.status_quo(r, k) - k
+
+    def sell(self) -> float:
+        """ Calls sell for the current parameters of the model. """
+        return self.__sell(self.r, self.b)
 
     ### "Introspective" methods, in order to determine information about
     # the model's random variable itself

@@ -1,4 +1,4 @@
-import prob
+from . import prob
 # comparing two scalars, comparing two lists, allowed distance from 1 
 EPSILON, LIST_EPS, DIST = 0.1, 0.01, 10**-3
 
