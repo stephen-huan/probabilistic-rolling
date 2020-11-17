@@ -5,6 +5,8 @@ rolling on Discord.
 Optimizations include integer linear programming techniques and
 dynamic programming on the expected value of a random variable.
 
+Data collected by [Luke Thistlethwaite](https://github.com/lthistle).
+
 TODO:
 - White paper
 - long-running average pmf with fast polynomial exponentiation

@@ -14,7 +14,7 @@ count_k  = [0]*prob.N
 count_rolls = [0]
 count_last = [0]*prob.N
 
-def sample(X: list, F: list) -> float:
+def sample(X: list=prob.X, F: list=prob.F) -> float:
     """ Samples a value from a random variable. """
     p = random.random()
     return X[bisect.bisect(F, p) - 1]
@@ -37,7 +37,7 @@ def simulate(m: model.Model=model.Model(), index: int=0) -> float:
         # new batch, reset seen and assume offset has been taken care of
         if len(l) == size:
             l, size = [], prob.B
-        k = sample(prob.X, prob.F)
+        k = sample()
         l.append(k)
         # give kakera value to the model 
         i = m.update(k)

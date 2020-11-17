@@ -1,3 +1,4 @@
+# written by Luke Thistlethwaite
 import pickle
 import random
 with open('data/bundle_info.p', 'rb') as f:

@@ -37,7 +37,14 @@ class Model():
         # number of rolls left, list of seen kakera values, best value
         self.r, self.l, self.b = self.R, [], float("-inf")
         self.size = self.offset if self.offset > 0 else self.B
-        self.rolls_use = ROLLS_AVAILABLE
+        self.rolls_use = self.ROLLS_AVAILABLE
+
+    def __rolls(self) -> None:
+        """ Update the model's parameters if it uses $rolls. """
+        delta = prob.upper(self.r + 1, self.B) - self.r
+        self.r += delta
+        self.size += delta
+        self.rolls_use = False
 
     def update(self, k: int) -> int:
         """ Returns an index if something is worth claiming, otherwise None. """
@@ -53,12 +60,8 @@ class Model():
         if self.b > self.Ef(self.r) and len(self.l) == self.size:
             # use $rolls if emitting this bad of a value has probability 1/8
             if self.rolls_use and self.rolls_left > 0 and self.b <= self.kp:
-                delta = prob.upper(self.r + 1, self.B) - self.r
-                self.r += delta
-                self.size += delta
-                self.rolls_use = False
+                self.__rolls()
                 return ROLLS
-
             return self.l.index(self.b)
 
     ### Buying and selling price methods

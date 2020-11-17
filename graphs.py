@@ -1,7 +1,7 @@
 import matplotlib.pyplot as plt
 import numpy as np
-from prob import *
-import model
+from problib.prob import *
+from problib import model
 
 ROLLS = True # whether to include the $rolls model
 
