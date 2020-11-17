@@ -25,7 +25,7 @@ if __name__ == "__main__":
     random.seed(None)
     game, total = 0, 0
     m = model.Model(ROLLS_AVAILABLE=False)
-    m.rolls_left = 100
+    m.rolls_left = 0
     print("Type a number to claim that character and -1 to use $rolls. Hit enter to roll again.")
     while True:
         m.reset()

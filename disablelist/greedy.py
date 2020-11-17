@@ -1,4 +1,7 @@
 import pickle, random, math
+# the max cover problem, with an additional constraint and weighting
+# greedy algorithm on the traditional problem yields a bound of (1 - 1/e):
+# https://people.seas.harvard.edu/~yaron/AM221-S16/lecture_notes/AM221_lecture18.pdf
 
 with open("data/bundle_info.p", "rb") as f:
     # maps bundles -> List[str] of series

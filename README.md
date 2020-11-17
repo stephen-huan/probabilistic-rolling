@@ -9,6 +9,7 @@ Data collected by [Luke Thistlethwaite](https://github.com/lthistle).
 
 TODO:
 - White paper
+- linear regression/fractional trick to optimize disable lists
 - long-running average pmf with fast polynomial exponentiation
 (like fast exponentiation but with convolution)
 
