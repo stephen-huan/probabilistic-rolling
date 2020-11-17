@@ -39,12 +39,12 @@ if __name__ == "__main__":
     m.emphasis = 2
     status = m.optimize()
     disable_list = [bundle_list[i] for i in range(N) if x[i].x >= 0.99]
-    # disable_list = ['Kadokawa Future Publishing', 'Kodansha', 'Shogakukan', 'Hentai', 'YouTube', 'Pokémon', 'Gangan Comics', 'Akita Shoten', 'Web Novels', 'Houbunsha']
+    # disable_list = ['kadokawa future publishing', 'kodansha', 'shogakukan', 'hentai', 'youtube', 'pokémon', 'gangan comics', 'akita shoten', 'web novels', 'houbunsha']
     count = sum(series_dict_wa[x][-1] for x in
                 set(s for bundle in disable_list for s in bundle_dict[bundle]))
     total = sum(size[bundle] for bundle in disable_list)
 
-    print(f"diablelist ({len(disable_list)}/10)")
+    print(f"disablelist ({len(disable_list)}/10)")
     print(f"{server_disabled + total} disabled ({server_wa + count} $wa)")
     print(f"Overlap limit: {total} / 20000 characters")
     print(f"{count} $wa characters disabled by $disable")

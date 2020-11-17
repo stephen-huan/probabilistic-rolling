@@ -36,3 +36,12 @@ evz = [0]*(N + 1)
 for i in range(N):
     evz[i + 1] = evz[i] + X[i]*(Fz[i + 1] - Fz[i])
 
+### data.py
+# manually fixing Avik's regex which breaks for characters with a * in the name 
+series_char = load_data("wa_series_info")
+series_char["HARDCORE TANO*C"]["chars"] = {"DORO*C": (43, False)}
+series_char["Utaite"]["chars"]["*namirin"] = (40, False)
+print(len(series_char["Utaite"]["chars"]))
+with open("temp.pickle", "wb") as f:
+    pickle.dump(series_char, f)
+
