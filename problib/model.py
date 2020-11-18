@@ -141,3 +141,23 @@ class Model():
         """ Probability of emitting the kakera value k. """
         return self.__p_k(k) + self.p_r(1)*(self.p_last(k) - self.fz(k))
 
+def display(name: str, p: list, rv: list=prob.X, verbose: bool=False) -> str:
+    """ Displays information about a random variable. """
+    l = []
+    l.append(f"Properties of the random variable {name}:")
+    if verbose:
+        l.append(f"Min: {rv[0]}, Max: {rv[-1]}, Range: {rv[-1] - rv[0]}")
+    l.append(f"Expected Value: {prob.E(p, rv):.3f}")
+    var, std = prob.Var(p, rv), prob.std(p, rv)
+    l.append(f"Variance: {var:.3f}, Standard Deviation: {std:.3f}")
+    l.append("-"*10)
+    return "\n".join(l)
+
+if __name__ == "__main__":
+    print(display("X", prob.p, prob.X, True))
+    print(display(f"Z_{prob.B}", [prob.fz(z) for z in prob.Z]))
+    m = Model(ROLLS_AVAILABLE=False)
+    print(display("model", [m.p_k(x) for x in prob.X]))
+    m = Model()
+    print(display("rolls model", [m.p_k(x) for x in prob.X]))
+

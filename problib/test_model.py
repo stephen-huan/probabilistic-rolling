@@ -3,9 +3,9 @@ from . import prob, model
 from .testing import norm, apply, adiff, fdiff
 
 random.seed(1)
-ITERS = 10**5
+ITERS = 3*10**6
 prob.R, prob.B = 30, 10
-model.ROLLS_AVAILABLE, model.ROLLS_CYCLE = True, 10
+model.ROLLS_AVAILABLE, model.ROLLS_CYCLE = True, 8
 model.ROLLS_F = 1/model.ROLLS_CYCLE
 
 count_Fr = [0]*(prob.R + 1)

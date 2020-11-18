@@ -3,11 +3,11 @@ import numpy as np
 from problib.prob import *
 from problib import model
 
-ROLLS = False  # whether to include the $rolls model
+ROLLS = True  # whether to include the $rolls model
 STEM  = False # whether to use a stem plot
 
 graphs = [None] + [0]*20
-graphs[3] = 1
+graphs[10] = 1
 fig = plt.figure(tight_layout=True)
 
 def graph_rv(X: list, p: list, i: int=0, label: str=None) -> None:
@@ -32,7 +32,7 @@ g = 1
 if graphs[g]:
     graph_rv(X, p)
     plt.title("Random Variable X")
-    # plt.savefig(f"graphs/graph{g}.png")
+    plt.savefig(f"graphs/graph{g}.png")
     plt.show()
 
 ### Graph 2: pmf of Zn
@@ -43,7 +43,7 @@ if graphs[g]:
         graph_rv(Z, [fz(z, b) for z in Z], i, f"Z with batch size {b}")
     plt.title("Random Variable Zs")
     plt.legend()
-    # plt.savefig(f"graphs/graph{g}.png")
+    plt.savefig(f"graphs/graph{g}.png")
     plt.show()
 
 ### Graph 3: pmf of the model 
@@ -58,13 +58,13 @@ if graphs[g]:
         graph_rv(X, model_pmf(R, B, True), 3, f"Model pmf with $rolls")
     plt.title("Random Variable of the Model")
     plt.legend()
-    plt.savefig(f"graphs/graph{g}_{'rolls' if ROLLS else ''}.png")
+    plt.savefig(f"graphs/graph{g}{'_rolls' if ROLLS else ''}.png")
     plt.show()
 
 ### Graph 4: the E[t] dropoff over time
 g = 4
 if graphs[g]:
-    R, B = 300, 10
+    R, B = 500, 10
     BATCHES = R//B
     x, y = list(range(R + 1)), [ev(r, 1, False) for r in range(R + 1)]
     # xz = [b*B for b in range(BATCHES + 1)]
@@ -80,7 +80,7 @@ if graphs[g]:
     plt.ylabel("Expected Value (kakera)")
     plt.xlabel("Time (rolls)")
     plt.legend()
-    # plt.savefig(f"graphs/graph{g}_{'rolls' if ROLLS else ''}.png")
+    plt.savefig(f"graphs/graph{g}{'_rolls' if ROLLS else ''}.png")
     plt.show()
 
 ### Graph 5: expected value of the model over batch size
@@ -96,7 +96,7 @@ if graphs[g]:
     plt.title("Model Expected Value over Batch Size")
     plt.ylabel("Expected Value (kakera)")
     plt.xlabel("Batch Size")
-    # plt.savefig(f"graphs/graph{g}_{'rolls' if ROLLS else ''}.png")
+    plt.savefig(f"graphs/graph{g}{'_rolls' if ROLLS else ''}.png")
     plt.show()
 
 ### Graph 6: expected value of the model over rolls and batch size
@@ -112,20 +112,20 @@ if graphs[g]:
     ax.set_zlabel("Expected Value")
     plt.ylabel("Batch Size")
     plt.xlabel("Rolls")
-    # plt.savefig(f"graphs/graph{g}.png")
+    plt.savefig(f"graphs/graph{g}.png")
     plt.show()
 
 ### Graph 7: the derivative E[t] with respect to t
 g = 7
 if graphs[g]:
-    R = 30
+    R = 100
     x, yf = list(range(R + 1)), list(map(Ef, range(R + 1)))
     yp = [yf[i + 1] - yf[i] for i in range(len(yf) - 1)]
     plt.plot(x[1:], yp)
     plt.title("Change over Time")
     plt.ylabel("Change in Expected Value (kakera)")
     plt.xlabel("Time (rolls)")
-    # plt.savefig(f"graphs/graph{g}.png")
+    plt.savefig(f"graphs/graph{g}.png")
     plt.show()
 
 ### Graph 8: unit price of rolls
@@ -140,13 +140,13 @@ if graphs[g]:
     ax.set_zlabel("Unit Price of Rolls (Kakera/Roll)")
     ax.set_ylabel("Number of Rolls Sold")
     ax.set_xlabel("Buyer's Number of Rolls")
-    # plt.savefig(f"graphs/graph{g}.png")
+    plt.savefig(f"graphs/graph{g}.png")
     plt.show()
 
 ### Graph 9: variance of the model over rolls
 g = 9
 if graphs[9]:
-    R, B = 600, 600
+    R, B = 2000, 2000
     x, y = list(range(R + 1)), [var(r, B, False) for r in range(R + 1)]
     plt.plot(x, y)
     if ROLLS:
@@ -156,7 +156,7 @@ if graphs[9]:
     plt.title("Model Variance over Time")
     plt.ylabel("Variance (kakera^2)")
     plt.xlabel("Rolls")
-    plt.savefig(f"graphs/graph{g}_{'rolls' if ROLLS else ''}.png")
+    plt.savefig(f"graphs/graph{g}{'_rolls' if ROLLS else ''}.png")
     plt.show()
 
 ### Graph 10: variance over batch size 
@@ -172,7 +172,7 @@ if graphs[g]:
     plt.title("Model Variance over Batch Size")
     plt.ylabel("Variance (kakera^2)")
     plt.xlabel("Batch Size")
-    plt.savefig(f"graphs/graph{g}_{'rolls' if ROLLS else ''}.png")
+    plt.savefig(f"graphs/graph{g}{'_rolls' if ROLLS else ''}.png")
     plt.show()
 
 ### Graph 11: variance over rolls and batch size
@@ -188,6 +188,6 @@ if graphs[g]:
     ax.set_zlabel("Variance")
     plt.ylabel("Batch Size")
     plt.xlabel("Rolls")
-    # plt.savefig(f"graphs/graph{g}.png")
+    plt.savefig(f"graphs/graph{g}.png")
     plt.show()
 
