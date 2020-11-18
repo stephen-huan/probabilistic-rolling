@@ -15,7 +15,7 @@ assert sorted(X) == X, "support set must be sorted"
 assert abs(sum(p) - 1) < 10**-3, "not a valid pmf"
 
 # number of discrete values, number of rolls, number of rolls per batch
-N, R, B = len(X), 30, 2000
+N, R, B = len(X), 30, 10
 # value to index
 D = {x: i for i, x in enumerate(X)}
 

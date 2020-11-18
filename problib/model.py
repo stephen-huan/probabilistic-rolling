@@ -156,6 +156,7 @@ def display(name: str, p: list, rv: list=prob.X, verbose: bool=False) -> str:
 if __name__ == "__main__":
     print(display("X", prob.p, prob.X, True))
     print(display(f"Z_{prob.B}", [prob.fz(z) for z in prob.Z]))
+    print(display(f"Z_{prob.R}", [prob.fz(z, prob.R) for z in prob.Z]))
     m = Model(ROLLS_AVAILABLE=False)
     print(display("model", [m.p_k(x) for x in prob.X]))
     m = Model()
