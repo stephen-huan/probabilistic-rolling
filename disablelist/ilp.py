@@ -5,7 +5,7 @@ from problib.data import *
 FNAME = "model.lp"
 
 # number of bundles, number of series, and number of bundles able to be added
-N, M, K, C = len(bundle_list), len(series_list), 10, 20000
+N, M, K, C = len(bundle_list), len(series_list), 10, 19990
 # list[int] mapping bundle index -> total characters
 s = [size[bundle] for bundle in bundle_list]
 # list[int] mapping series index -> $wa characters
@@ -38,7 +38,7 @@ if __name__ == "__main__":
     m.emphasis = 2
     status = m.optimize()
     disable_list = [bundle_list[i] for i in range(N) if x[i].x >= 0.99]
-    # disable_list = ['kadokawa future publishing', 'kodansha', 'shogakukan', 'hentai', 'youtube', 'pokémon', 'gangan comics', 'akita shoten', 'web novels', 'houbunsha']
+    # disable_list = ['kadokawa future publishing', 'shueisha', 'kodansha', 'shogakukan', 'akita shoten', 'houbunsha', 'virtual youtubers', 'young gangan', 't-rex', 'comic ryu']
     count = sum(series_dict_wa[x][-1] for x in
                 set(s for bundle in disable_list for s in bundle_dict[bundle]))
     total = sum(size[bundle] for bundle in disable_list)
