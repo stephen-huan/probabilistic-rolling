@@ -3,15 +3,19 @@ import numpy as np
 from problib.prob import *
 from problib import model
 
-ROLLS = True # whether to include the $rolls model
+ROLLS = False  # whether to include the $rolls model
+STEM  = False # whether to use a stem plot
 
 graphs = [None] + [0]*20
-graphs[4] = 1
+graphs[3] = 1
 fig = plt.figure(tight_layout=True)
 
 def graph_rv(X: list, p: list, i: int=0, label: str=None) -> None:
     """ Graphs a random variable using a stem plot. """
-    plt.stem(X, p, linefmt=f"C{i}-", markerfmt=f"C{i}o", label=label)
+    if STEM:
+        plt.stem(X, p, linefmt=f"C{i}-", markerfmt=f"C{i}o", label=label)
+    else:
+        plt.plot(X, p, label=label)
     plt.ylabel("Probability")
     plt.xlabel("Value")
 
@@ -54,7 +58,7 @@ if graphs[g]:
         graph_rv(X, model_pmf(R, B, True), 3, f"Model pmf with $rolls")
     plt.title("Random Variable of the Model")
     plt.legend()
-    # plt.savefig(f"graphs/graph{g}_{'rolls' if ROLLS else ''}.png")
+    plt.savefig(f"graphs/graph{g}_{'rolls' if ROLLS else ''}.png")
     plt.show()
 
 ### Graph 4: the E[t] dropoff over time

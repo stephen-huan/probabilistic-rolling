@@ -1,5 +1,6 @@
 import bisect, sys, math
 from functools import lru_cache
+from .data import X, p
 sys.setrecursionlimit(10**4)
 
 ### Random variables, pmfs and cmfs, constants, and setup
@@ -8,9 +9,10 @@ X is a discrete random variable (r.v.)
 p is its corresponding probability mass function (pmf)
 E[X] is the expected value of X
 """
-X = [   1,    5,  10,   15,   16,   20,  30,   35,   50,  100]
-p = [0.05, 0.08, 0.1, 0.12, 0.17, 0.22, 0.1,  0.1, 0.05, 0.01]
-assert sum(p) == 1
+# X = [   1,    5,  10,   15,   16,   20,  30,   35,   50,  100]
+# p = [0.05, 0.08, 0.1, 0.12, 0.17, 0.22, 0.1,  0.1, 0.05, 0.01]
+assert sorted(X) == X, "support set must be sorted"
+assert abs(sum(p) - 1) < 10**-3, "not a valid pmf"
 
 # number of discrete values, number of rolls, number of rolls per batch
 N, R, B = len(X), 30, 10
@@ -112,6 +114,12 @@ def price(r: int, k: int, b: int=B) -> float:
     return Ef(r + k, b) - Ef(r, b)
 
 if __name__ == "__main__":
+    print("Properties of the random variable:")
+    print(f"Min: {X[0]}, Max: {X[-1]}, Range: {X[-1] - X[0]}")
+    print(f"Expected Value: {E(p):.3f}")
+    print(f"Variance: {Var(p):.3f}, Standard Deviation: {std(p):.3f}")
+    print("-"*10)
+
     # basic model, once you sample X you can't "go back" to the value
     print(Er(0, 0), Er(0, 1), Er(0, R))
     # extension 1: batches of 10

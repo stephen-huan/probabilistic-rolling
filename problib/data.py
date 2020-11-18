@@ -92,3 +92,24 @@ for s in server_seen:
 
 bundle_list, series_list = list(bundle_dict.keys()), list(series_dict_wa.keys())
 
+### tie-in to prob
+
+def character_values(disable_list: list=server_disabled_list) -> list:
+    """ Return the character values from a disable_list. """
+    seen = set(disable_list)
+    chars = set(char for bundle in bundle_dict for series in bundle_dict[bundle]
+                for char in series_char[series] if bundle not in seen)
+    return [char_value[char] for char in chars]
+
+def random_variable(values: list) -> tuple:
+    """ Returns the support set and the pmf of the kakera random variable. """
+    X, freq = sorted(set(values)), {}
+    for x in values:
+        freq[x] = freq.get(x, 0) + 1
+    denom = sum(freq.values())
+    return X, [freq[x]/denom for x in X]
+
+disable_list = []
+if DATA_SOURCE != 0:
+    X, p = random_variable(character_values(disable_list))
+
