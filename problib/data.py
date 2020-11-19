@@ -114,7 +114,9 @@ def get_list(fname: str) -> list:
 
 def get_series(bundle_list: list) -> set:
     """ Gets the set of series associated with a bundle list. """
-    return set(series for b in bundle_list for series in bundle_dict[b])
+    # if a bundle is not in bundle_dict, it's a series and contains only itself
+    return set(series for b in bundle_list
+               for series in bundle_dict.get(b, [b]))
 
 def character_values(disable_list: list=server_disabled_list,
                      anti_list: list=[]) -> list:
