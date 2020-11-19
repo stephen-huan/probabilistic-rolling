@@ -4,8 +4,8 @@ from problib.data import *
 
 FNAME = "model.lp"
 
-# number of bundles, number of series, and number of bundles able to be added
-N, M, K, C = len(bundle_list), len(series_list), 10, 20000
+# number of bundles, number of series
+N, M = len(bundle_list), len(series_list)
 # list[int] mapping bundle index -> total characters
 s = [size[bundle] for bundle in bundle_list]
 # list[int] mapping series index -> $wa characters
@@ -22,9 +22,9 @@ y = [m.add_var(name=f"y{i}", var_type=BINARY) for i in range(M)]
 # can only pick K = 10 bundles
 # exactly K is faster but less accurate
 # change to <= K if it gives a better solution
-m += xsum(x[i] for i in range(N)) == K, "number_bundles"
+m += xsum(x[i] for i in range(N)) == NUM_DISABLE, "number_bundles"
 # total sum of bundle sizes less than C = 20,000
-m += xsum(s[i]*x[i] for i in range(N)) <= C, "capacity_limit"
+m += xsum(s[i]*x[i] for i in range(N)) <= OVERLAP, "capacity_limit"
 # if yi is included, at least one bundle needs to have it
 for i in range(M):
     m += xsum(x[j] for j in range(N) if series_list[i]

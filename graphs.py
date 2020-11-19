@@ -7,7 +7,7 @@ ROLLS = True  # whether to include the $rolls model
 STEM  = False # whether to use a stem plot
 
 graphs = [None] + [0]*20
-graphs[10] = 1
+graphs[1] = 1
 fig = plt.figure(tight_layout=True)
 
 def graph_rv(X: list, p: list, i: int=0, label: str=None) -> None:
