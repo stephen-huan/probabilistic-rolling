@@ -8,6 +8,8 @@ dynamic programming on the expected value of a random variable.
 Initial data collected by [Luke Thistlethwaite](https://github.com/lthistle)
 and extended to character-level data by [Avik Rao](https://github.com/AvikRao).
 
+See Luke's repository [here](https://github.com/lthistle/mudae-optimizer).
+
 TODO:
 - White paper
 - linear regression/fractional trick to optimize disable lists
