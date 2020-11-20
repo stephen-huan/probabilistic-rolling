@@ -22,8 +22,8 @@ z = [m.add_var(name=f"z{i}", var_type=BINARY) for i in range(M)]
 
 ### constraints
 # can only disable up to K = 10 bundles, exactly K is faster but less accurate
-# change to <= K if it gives a better solution
-m += xsum(x) == NUM_DISABLE, "number_disable"
+# change to == K if it doesn't affect the solution and is faster
+m += xsum(x) <= NUM_DISABLE, "number_disable"
 # total sum of bundle sizes less than C = 20,000
 m += xsum(s[i]*x[i] for i in range(len(x))) <= OVERLAP, "capacity_limit"
 # can only antidisable up to A = 500 series
@@ -37,7 +37,7 @@ for i in range(M):
     m += xsum(bundles) >= y[i], f"inclusion{i}"
     # forcing term, comment out if the metric naturally incentivizes forcing
     for b in bundles:
-        m += y[i] >= b, f"forcing{i}-{b.name}"
+        m += y[i] >= b, f"forcing{i}_{b.name}"
 
     # shouldn't antidisable a series if it isn't disabled
     m += z[i] <= y[i], f"antidisable{i}"
@@ -48,7 +48,8 @@ m.objective = xsum(w[i]*(y[i] - z[i]) for i in range(M))
 if __name__ == "__main__":
     m.emphasis = 2 # emphasize optimality
     status = m.optimize()
-    disable_list = [bundle_list[i] for i in range(len(x)) if x[i].x >= 0.99]
+    disable_list = [bundle_list[i] for i in range(N) if x[i].x >= 0.99] + \
+        [series_list[i - N] for i in range(N, N + M) if x[i].x >= 0.99]
     antidisable_list = [series_list[i] for i in range(len(z)) if z[i].x >= 0.99]
     count = sum(series_dict_wa[s][-1] for s in get_series(disable_list))
     total = sum(size[bundle] if bundle in size else series_dict_wa[bundle][-1]

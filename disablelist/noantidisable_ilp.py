@@ -9,7 +9,7 @@ specific problem is that of mixed-integer linear fractional programming,
 solved with the reformulation-linerization method:
 https://optimization.mccormick.northwestern.edu/index.php/Mixed-integer_linear_fractional_programming_(MILFP)
 """
-DISABLE_SERIES, ANTIDISABLE = True, True # whether to [anti]disable series
+DISABLE_SERIES = True # whether to disable series
 # number of bundles, number of series
 N, M = len(bundle_list), len(series_list)
 # list[int] mapping bundle/series index -> total characters
@@ -32,9 +32,6 @@ x = [[m.add_var(name=f"x{i}", var_type=BINARY) for i in range(N + A)],
 # whether the ith series is included or not
 y = [[m.add_var(name=f"y{i}", var_type=BINARY) for i in range(M)],
      [m.add_var(name=f"yp{i}", lb=L, ub=U) for i in range(M)]]
-# whether the ith series is antidisabled or not
-z = [[m.add_var(name=f"z{i}", var_type=BINARY) for i in range(M)],
-     [m.add_var(name=f"zp{i}", lb=L, ub=U) for i in range(M)]]
 # denominator for the Charnes-Cooper transformation
 d = m.add_var(name="denominator", lb=0, ub=1)
 
@@ -44,8 +41,6 @@ d = m.add_var(name="denominator", lb=0, ub=1)
 m += xsum(x[1]) <= NUM_DISABLE*d, "number_disable"
 # total sum of bundle sizes less than C = 20,000
 m += xsum(s[i]*x[1][i] for i in range(len(x))) <= OVERLAP*d, "capacity_limit"
-# can only antidisable up to A = 500 series
-m += xsum(z[1]) <= NUM_ANTIDISABLE*d, "number_antidisable"
 for i in range(M):
     name = series_list[i]
     bundles = [x[1][j] for j in range(N) if name in bundle_dict[bundle_list[j]]]
@@ -58,11 +53,9 @@ for i in range(M):
     for b in bundles:
         m += y[1][i] >= b, f"forcing{i}_{b.name}"
 
-    # shouldn't antidisable a series if it isn't disabled
-    m += z[1][i] <= y[1][i], f"antidisable{i}"
 # Glover linearization constraints in order to force
 # the continuous variables to act like a product 
-for k, var_list in enumerate([x, y, z]):
+for k, var_list in enumerate([x, y]):
     for i in range(len(var_list[0])):
         xi, zi = var_list[0][i], var_list[1][i]
         m += L*xi <= zi,  f"x{k}{i}_0l"
@@ -71,17 +64,11 @@ for k, var_list in enumerate([x, y, z]):
         m += zi <= d - L*(1 - xi), f"x{k}{i}_1r"
 
 # denominator of the expected value
-m += xsum(w[i]*(d - (y[1][i] - z[1][i])) for i in range(M)) == 1, "denominator"
-
-# if not antidisabling, turn each antidisable off 
-if not ANTIDISABLE:
-    for i in range(len(z)):
-        m += z[0][i] == 0, f"{zi.name}0"
-        m += z[1][i] == 0, f"{zi.name}1"
+m += xsum(w[i]*(d - y[1][i]) for i in range(M)) == 1, "denominator"
 
 ### objective: maximize expected value of the remaining characters
 # numerator of the expected value, denominator has been accounted for
-m.objective = xsum(t[i]*(d - (y[1][i] - z[1][i])) for i in range(M))
+m.objective = xsum(t[i]*(d - (y[1][i])) for i in range(M))
 
 if __name__ == "__main__":
     m.emphasis = 2   # emphasize optimality
@@ -89,7 +76,7 @@ if __name__ == "__main__":
     status = m.optimize()
     disable_list = [bundle_list[i] for i in range(N) if x[0][i].x >= 0.99] + \
         [series_list[i - N] for i in range(N, N + A) if x[0][i].x >= 0.99]
-    antidisable_list = [series_list[i] for i in range(M) if z[0][i].x >= 0.99]
+    antidisable_list = []
     count = sum(series_dict_wa[s][-1] for s in get_series(disable_list))
     total = sum(size[bundle] if bundle in size else series_dict_wa[bundle][-1]
                 for bundle in disable_list)
