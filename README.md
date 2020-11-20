@@ -12,7 +12,7 @@ See Luke's repository [here](https://github.com/lthistle/mudae-optimizer).
 
 TODO:
 - White paper
-- linear regression/fractional trick to optimize disable lists
+- linear regression to optimize disable lists
 - long-running average pmf with fast polynomial exponentiation
 (like fast exponentiation but with convolution)
 

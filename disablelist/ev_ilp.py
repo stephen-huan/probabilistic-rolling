@@ -14,7 +14,8 @@ DISABLE_SERIES, ANTIDISABLE = False, True  # whether to [anti]disable series
 # number of bundles, number of series
 N, M = len(bundle_list), len(series_list)
 bundle_list.sort(key=lambda bundle: -size[bundle])
-N, bundle_list = min(NUM_BUNDLES, N), bundle_list[:NUM_BUNDLES]
+NUM_BUNDLES = N = min(NUM_BUNDLES, N)
+bundle_list = bundle_list[:N]
 # list[int] mapping bundle/series index -> total characters
 s = [size[bundle] for bundle in bundle_list] + \
     [series_dict[series][-1] for series in series_list]
@@ -30,8 +31,7 @@ m = Model(sense=MAXIMIZE, solver_name=CBC)
 L, U = 0, sum(w)
 # also double each list of variables, first are binary, second continuous 
 # whether the ith bundle/series is disabled
-x = [[m.add_var(name=f"x{i}", var_type=BINARY) for i in range(N + A)],
-     [m.add_var(name=f"xp{i}", lb=L, ub=U) for i in range(N + A)]]
+x = [m.add_var(name=f"x{i}", var_type=BINARY) for i in range(N + A)]
 # whether the ith series is included or not
 y = [[m.add_var(name=f"y{i}", var_type=BINARY) for i in range(M)],
      [m.add_var(name=f"yp{i}", lb=L, ub=U) for i in range(M)]]
@@ -44,31 +44,31 @@ d = m.add_var(name="denominator", lb=0, ub=1)
 ### constraints
 # can only disable up to K = 10 bundles, exactly K is faster but less accurate
 # change to <= K if it gives a better solution
-m += xsum(x[1]) <= NUM_DISABLE*d, "number_disable"
+m += xsum(x) <= NUM_DISABLE, "number_disable"
 # total sum of bundle sizes less than C = 20,000
-m += xsum(s[i]*x[1][i] for i in range(len(x[0]))) <= OVERLAP*d, "capacity_limit"
+m += xsum(s[i]*x[i] for i in range(len(x))) <= OVERLAP, "capacity_limit"
 # can only antidisable up to A = 500 series
-m += xsum(z[1]) <= NUM_ANTIDISABLE*d, "number_antidisable"
+m += xsum(z[0]) <= NUM_ANTIDISABLE, "number_antidisable"
 for i in range(M):
     name = series_list[i]
-    bundles = [x[1][j] for j in range(N) if name in bundle_dict[bundle_list[j]]]
+    bundles = [x[j] for j in range(N) if name in bundle_dict[bundle_list[j]]]
     if DISABLE_SERIES:
         # the psuedo-bundle containing just the series
-        bundles.append(x[1][i + N])
+        bundles.append(x[i + N])
     # if yi is included, at least one bundle needs to have it
-    m += xsum(bundles) >= y[1][i], f"inclusion{i}"
+    m += xsum(bundles) >= y[0][i], f"inclusion{i}"
     # forcing term, comment out if the metric naturally incentivizes forcing
     for b in bundles:
-        m += y[1][i] >= b, f"forcing{i}_{b.name}"
+        m += y[0][i] >= b, f"forcing{i}_{b.name}"
 
     # shouldn't antidisable a series if it isn't disabled
-    m += z[1][i] <= y[1][i], f"antidisable{i}"
+    m += z[0][i] <= y[0][i], f"antidisable{i}"
 # Glover linearization constraints in order to force
 # the continuous variables to act like a product 
-for k, var_list in enumerate([x, y, z]):
+for k, var_list in enumerate([y, z]):
     for i in range(len(var_list[0])):
         xi, zi = var_list[0][i], var_list[1][i]
-        m += L*xi <= zi,  f"x{k}{i}_0l"
+        m += L*xi <= zi, f"x{k}{i}_0l"
         m += zi <= U*xi, f"x{k}{i}_0r"
         m += d - U*(1 - xi) <= zi, f"x{k}{i}_1l"
         m += zi <= d - L*(1 - xi), f"x{k}{i}_1r"
@@ -90,8 +90,8 @@ if __name__ == "__main__":
     m.emphasis = 2   # emphasize optimality
     m.preprocess = 1 # don't preprocess if it introduces error
     status = m.optimize()
-    disable_list = [bundle_list[i] for i in range(N) if x[0][i].x >= 0.99] + \
-        [series_list[i - N] for i in range(N, N + A) if x[0][i].x >= 0.99]
+    disable_list = [bundle_list[i] for i in range(N) if x[i].x >= 0.99] + \
+        [series_list[i - N] for i in range(N, N + A) if x[i].x >= 0.99]
     antidisable_list = [series_list[i] for i in range(M) if z[0][i].x >= 0.99]
     total = get_size(disable_list)
     count, count_anti = get_wa(disable_list), get_wa(antidisable_list)
