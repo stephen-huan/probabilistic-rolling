@@ -43,9 +43,7 @@ if __name__ == "__main__":
     status = m.optimize()
     disable_list = [bundle_list[i] for i in range(N) if x[i].x >= 0.99] + \
         [series_list[i - N] for i in range(N, N + A) if x[i].x >= 0.99]
-    count = sum(series_dict_wa[s][-1] for s in get_series(disable_list))
-    total = sum(size[bundle] if bundle in size else series_dict_wa[bundle][-1]
-                for bundle in disable_list)
+    total, count = get_size(disable_list), get_wa(disable_list)
 
     print(f"disablelist ({len(disable_list)}/{NUM_DISABLE})")
     print(f"{server_disabled + total} disabled ({server_wa + count} $wa)")

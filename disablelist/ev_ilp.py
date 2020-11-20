@@ -9,9 +9,12 @@ specific problem is that of mixed-integer linear fractional programming,
 solved with the reformulation-linerization method:
 https://optimization.mccormick.northwestern.edu/index.php/Mixed-integer_linear_fractional_programming_(MILFP)
 """
-DISABLE_SERIES, ANTIDISABLE = True, True # whether to [anti]disable series
+NUM_BUNDLES = 10                           # reduce number of variables
+DISABLE_SERIES, ANTIDISABLE = False, True  # whether to [anti]disable series
 # number of bundles, number of series
 N, M = len(bundle_list), len(series_list)
+bundle_list.sort(key=lambda bundle: -size[bundle])
+N, bundle_list = min(NUM_BUNDLES, N), bundle_list[:NUM_BUNDLES]
 # list[int] mapping bundle/series index -> total characters
 s = [size[bundle] for bundle in bundle_list] + \
     [series_dict[series][-1] for series in series_list]
@@ -43,7 +46,7 @@ d = m.add_var(name="denominator", lb=0, ub=1)
 # change to <= K if it gives a better solution
 m += xsum(x[1]) <= NUM_DISABLE*d, "number_disable"
 # total sum of bundle sizes less than C = 20,000
-m += xsum(s[i]*x[1][i] for i in range(len(x))) <= OVERLAP*d, "capacity_limit"
+m += xsum(s[i]*x[1][i] for i in range(len(x[0]))) <= OVERLAP*d, "capacity_limit"
 # can only antidisable up to A = 500 series
 m += xsum(z[1]) <= NUM_ANTIDISABLE*d, "number_antidisable"
 for i in range(M):
@@ -75,7 +78,7 @@ m += xsum(w[i]*(d - (y[1][i] - z[1][i])) for i in range(M)) == 1, "denominator"
 
 # if not antidisabling, turn each antidisable off 
 if not ANTIDISABLE:
-    for i in range(len(z)):
+    for i in range(len(z[0])):
         m += z[0][i] == 0, f"{zi.name}0"
         m += z[1][i] == 0, f"{zi.name}1"
 
@@ -90,10 +93,8 @@ if __name__ == "__main__":
     disable_list = [bundle_list[i] for i in range(N) if x[0][i].x >= 0.99] + \
         [series_list[i - N] for i in range(N, N + A) if x[0][i].x >= 0.99]
     antidisable_list = [series_list[i] for i in range(M) if z[0][i].x >= 0.99]
-    count = sum(series_dict_wa[s][-1] for s in get_series(disable_list))
-    total = sum(size[bundle] if bundle in size else series_dict_wa[bundle][-1]
-                for bundle in disable_list)
-    count_anti = sum(series_dict_wa[s][-1] for s in antidisable_list)
+    total = get_size(disable_list)
+    count, count_anti = get_wa(disable_list), get_wa(antidisable_list)
 
     X, p = random_variable(character_values(disable_list, antidisable_list))
     print(f"expected value: {E(p, X):.3f}")

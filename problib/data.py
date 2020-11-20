@@ -108,6 +108,15 @@ bundle_list, series_list = list(bundle_dict.keys()), list(series_dict_wa.keys())
 
 ### tie-in to prob
 
+def get_size(disable_list: list) -> int:
+    """ Returns the total number of characters disabled. """
+    return sum(size[bundle] if bundle in size else series_dict_wa[bundle][-1]
+               for bundle in disable_list)
+
+def get_wa(disable_list: list) -> int:
+    """ Returns the number of $wa characters in the disable_list. """
+    return sum(series_dict_wa[s][-1] for s in get_series(disable_list))
+
 def get_list(fname: str) -> list:
     """ Reads a list from a file. """
     return parse_list(fname) if os.path.exists(fname) else []
@@ -137,6 +146,10 @@ def random_variable(values: list) -> tuple:
 # read user-specific disable and antidisable lists from text files 
 disable_list = get_list(DISABLE_LIST)
 antidisable_list = get_list(ANTIDISABLE_LIST)
+assert len(disable_list) <= NUM_DISABLE, "too many to disable"
+assert get_size(disable_list) <= OVERLAP, "too many characters disabled"
+assert len(antidisable_list) <= NUM_ANTIDISABLE, "too many to antidisable"
+
 if DATA_SOURCE != 0:
     X, p = random_variable(character_values(disable_list, antidisable_list))
 
