@@ -1,4 +1,5 @@
 import pickle, random, os
+import numpy as np
 from mip import Model, MAXIMIZE, CBC, BINARY, xsum
 from problib.data import *
 ### general ILP giving the structure of the problem
@@ -42,8 +43,9 @@ for i in range(M):
     # shouldn't antidisable a series if it isn't disabled
     m += z[i] <= y[i], f"antidisable{i}"
 
-### objective: maximize number of $wa characters
-m.objective = xsum(w[i]*(y[i] - z[i]) for i in range(M))
+### objective: load coefficients from numpy array 
+coef = np.load("linreg_coef.npy")
+m.objective = xsum(coef[i]*(y[i] - z[i]) for i in range(M))
 
 if __name__ == "__main__":
     m.emphasis = 2 # emphasize optimality

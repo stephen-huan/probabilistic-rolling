@@ -61,7 +61,10 @@ def parse_list(fname: str) -> list:
         for line in f:
             name, total = line.split()[:-1], line.split()[-1].strip()
             if total[0] + total[-1] == "()":
-                name, total = " ".join(name), int(total[1:-1])
+                try:
+                    name, total = " ".join(name), int(total[1:-1])
+                except ValueError:
+                    name = line
             else:
                 name = line
             lines.append(name.strip().lower())
@@ -127,13 +130,16 @@ def get_series(bundle_list: list) -> set:
     return set(series for b in bundle_list
                for series in bundle_dict.get(b, [b]))
 
+def char_values(series_list: list) -> list:
+    """ Return the character values from a list of series. """
+    chars = set(char for s in series_list for char in series_char[s])
+    return [char_value[char] for char in chars]
+
 def character_values(disable_list: list=server_disabled_list,
                      anti_list: list=[]) -> list:
     """ Return the character values from a disable_list. """
     seen = get_series(disable_list)
-    series = (set(series_list) - seen) | set(antidisable_list)
-    chars = set(char for s in series for char in series_char[s])
-    return [char_value[char] for char in chars]
+    return char_values((set(series_list) - seen) | set(antidisable_list))
 
 def random_variable(values: list) -> tuple:
     """ Returns the support set and the pmf of the kakera random variable. """

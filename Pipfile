@@ -8,6 +8,7 @@ mip = "*"
 matplotlib = "*"
 numpy = "*"
 scipy = "*"
+scikit-learn = "*"
 
 [dev-packages]
 

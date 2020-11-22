@@ -3,7 +3,7 @@ def write_file(fname: str, s: str) -> None:
     tokens = s.split("$")[1:]
     tokens[0] = " ".join(tokens[0].split()[1:])
     with open(fname, "w") as f:
-        for line in tokens:
+        for line in sorted(tokens):
             f.write(line.strip() + "\n")
 
 with open("out.txt") as f:
