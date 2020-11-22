@@ -12,8 +12,6 @@ See Luke's repository [here](https://github.com/lthistle/mudae-optimizer).
 
 TODO:
 - White paper
-- long-running average pmf with fast polynomial exponentiation
-(like fast exponentiation but with convolution)
 
 ### Installing and Running
 

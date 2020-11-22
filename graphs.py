@@ -1,13 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from problib.prob import *
-from problib import model
+from problib import model, convolve
 
 ROLLS = True  # whether to include the $rolls model
 STEM  = False # whether to use a stem plot
 
 graphs = [None] + [0]*20
-graphs[1] = 1
+graphs[12] = 1
 fig = plt.figure(tight_layout=True)
 
 def graph_rv(X: list, p: list, i: int=0, label: str=None) -> None:
@@ -188,6 +188,20 @@ if graphs[g]:
     ax.set_zlabel("Variance")
     plt.ylabel("Batch Size")
     plt.xlabel("Rolls")
+    plt.savefig(f"graphs/graph{g:02}.png")
+    plt.show()
+
+### Graph 12: pmf as the number of samples increases
+g = 12
+if graphs[g]:
+    poly = convolve.get_poly(X, p)
+    for i, n in enumerate([1, 50, 100, 200]):
+        pmf = convolve.poly_exp(poly, n)
+        graph_rv([i/n for i in range(len(pmf))], pmf, i, f"X_{n}")
+    plt.ylim(0, 0.001)
+    plt.xlim(0, 120)
+    plt.title("Average of X after n samples")
+    plt.legend()
     plt.savefig(f"graphs/graph{g:02}.png")
     plt.show()
 
