@@ -197,9 +197,8 @@ if graphs[g]:
     poly = convolve.get_poly(X, p)
     for i, n in enumerate([1, 50, 100, 200]):
         pmf = convolve.poly_exp(poly, n)
-        graph_rv([i/n for i in range(len(pmf))], pmf, i, f"X_{n}")
-    plt.ylim(0, 0.001)
-    plt.xlim(0, 120)
+        graph_rv([i/n for i in range(len(pmf))], [x*n for x in pmf], i, f"X_{n}")
+    plt.xlim(20, 100)
     plt.title("Average of X after n samples")
     plt.legend()
     plt.savefig(f"graphs/graph{g:02}.png")

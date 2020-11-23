@@ -59,15 +59,13 @@ def parse_list(fname: str) -> list:
     lines = []
     with open(fname) as f:
         for line in f:
-            name, total = line.split()[:-1], line.split()[-1].strip()
-            if total[0] + total[-1] == "()":
-                try:
-                    name, total = " ".join(name), int(total[1:-1])
-                except ValueError:
-                    name = line
-            else:
+            line = line.strip().lower()
+            if line in bundle_dict or line in series_dict:
                 name = line
-            lines.append(name.strip().lower())
+            else:
+                name, total = line.split()[:-1], line.split()[-1]
+                name, total = " ".join(name), int(total[1:-1])
+            lines.append(name)
     return lines
 
 # maps bundles -> List[str] of series
