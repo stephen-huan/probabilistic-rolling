@@ -1,7 +1,8 @@
 import bisect
 from functools import lru_cache
-from . import prob
+from . import prob, testing, rv
 
+K = rv.RandomVariable(prob.X, prob.p, "kakera")
 ROLLS = -1             # declare $rolls reset
 ROLLS_AVAILABLE = True # whether $rolls is allowed
 ROLLS_CYCLE = 8        # how often to use $rolls
@@ -17,19 +18,20 @@ class Model():
         self.R, self.B, self.offset = R, B, R % B
         self.ROLLS_AVAILABLE, self.ROLLS_CYCLE = ROLLS_AVAILABLE, ROLLS_CYCLE
         # precompute list of expected values for each roll
-        self.E = [prob.Ef(r, B) for r in range(prob.upper(R, self.B) + 1)]
+        self.E = [prob.Ef(r, B) for r in range(prob.upper(R, B) + 1)]
         # methods from prob that are rebound to the specific parameters
-        self.fz, self.Fz = lambda z: prob.fz(z, self.B), prob.Fzs[self.B]
-        self.Ef = lambda r: self.E[r] if r < len(self.E) else prob.Ef(r, self.B)
-        self.p_k = self.__p_k
+        self.fz, self.Fz = lambda z: prob.fz(z, B), prob.Fzs[B]
+        self.Ef = lambda r: self.E[r] if r < len(self.E) else prob.Ef(r, B)
+        self.f = self.__p_k
         if ROLLS_AVAILABLE:
-            self.p_k = self.__rolls_p_k
+            self.f = self.__rolls_p_k
             # generate cmf of p_k
             self.Fk = prob.prefix_sum(list(map(self.__p_k, prob.X)))
             # the largest value k* such that Fk(k*) triggers the roll cutoff
             self.kp = prob.X[bisect.bisect(self.Fk, ROLLS_F) - 2]
             assert prob.cmf(self.Fk, self.kp) <= ROLLS_F, "valid cutoff"
             self.rolls_left = 0
+        self.p_k = K.map(self.f)
         self.reset()
 
     def reset(self) -> None:
@@ -39,7 +41,7 @@ class Model():
         self.size = self.offset if self.offset > 0 else self.B
         self.rolls_use = self.ROLLS_AVAILABLE
 
-    def __rolls(self) -> None:
+    def rolls(self) -> None:
         """ Update the model's parameters if it uses $rolls. """
         delta = prob.upper(self.r + 1, self.B) - self.r
         self.r += delta
@@ -60,7 +62,7 @@ class Model():
         if self.b > self.Ef(self.r) and len(self.l) == self.size:
             # use $rolls if emitting this bad of a value has probability 1/8
             if self.rolls_use and self.rolls_left > 0 and self.b <= self.kp:
-                self.__rolls()
+                self.rolls()
                 return ROLLS
             return self.l.index(self.b)
 
@@ -130,7 +132,7 @@ class Model():
         i = min(bisect.bisect(self.E, k), self.R)
         return self.fz(k)*self.cond[i] + prob.fz(k, self.offset)*self.coff[i]
 
-    ### modified introspective models with $rolls
+    ### Modified introspective models with $rolls
 
     def p_last(self, k: int) -> float:
         """ Probability of emtting the kakera value k on the last layer. """
@@ -141,24 +143,53 @@ class Model():
         """ Probability of emitting the kakera value k. """
         return self.__p_k(k) + self.p_r(1)*(self.p_last(k) - self.fz(k))
 
-def display(name: str, p: list, rv: list=prob.X, verbose: bool=False) -> str:
-    """ Displays information about a random variable. """
-    l = []
-    l.append(f"Properties of the random variable {name}:")
-    if verbose:
-        l.append(f"Min: {rv[0]}, Max: {rv[-1]}, Range: {rv[-1] - rv[0]}")
-    l.append(f"Expected Value: {prob.E(p, rv):.3f}")
-    var, std = prob.Var(p, rv), prob.std(p, rv)
-    l.append(f"Variance: {var:.3f}, Standard Deviation: {std:.3f}")
-    l.append("-"*10)
-    return "\n".join(l)
+class GeneralModel(Model):
+
+    """ Handles multiple $rolls per claim. Not possible with Mudae rules. """
+
+    def __init__(self, R: int=prob.R, B: int=prob.B,
+                 ROLLS_AVAILABLE: bool=ROLLS_AVAILABLE,
+                 ROLLS_CYCLE: int=ROLLS_CYCLE) -> None:
+        super().__init__(R, B, ROLLS_AVAILABLE, ROLLS_CYCLE)
+        if ROLLS_AVAILABLE:
+            l, r = 0, prob.N
+            while l < r:
+                m = (l + r + 1)>>1
+                f = prob.cmf(self.Fz, prob.X[m])
+                if self.p_r(1)*f/(1 - f) <= ROLLS_F:
+                    l, r = m, r
+                else:
+                    l, r = l, m - 1
+            self.kp = prob.X[l]
+
+            f = prob.cmf(self.Fz, self.kp)
+            assert self.p_r(1)*f/(1 - f) <= ROLLS_F, "valid cutoff"
+
+            pmf = rv.norm([self.fz(k)*(k > self.kp) for k in K])
+            self.p_last = rv.RandomVariable(K, pmf)
+            self.p_k = K.map(self.f)
+
+    def rolls(self) -> None:
+        """ Update the model's parameters if it uses $rolls. """
+        delta = prob.upper(self.r + 1, self.B) - self.r
+        self.r += delta
+        self.size += delta
+
+def rename(X: rv.RandomVariable, name: str) -> str:
+    """ Renames the random variable. """
+    X.name = name
+    return str(X)
 
 if __name__ == "__main__":
-    print(display("X", prob.p, prob.X, True))
-    print(display(f"Z_{prob.B}", [prob.fz(z) for z in prob.Z]))
-    print(display(f"Z_{prob.R}", [prob.fz(z, prob.R) for z in prob.Z]))
-    m = Model(ROLLS_AVAILABLE=False)
-    print(display("model", [m.p_k(x) for x in prob.X]))
-    m = Model()
-    print(display("rolls model", [m.p_k(x) for x in prob.X]))
+    print(K)
+    print(f"min: {K[0]}, max: {K[-1]}, range: {K.range()}")
+    print(10*"-")
+    rvs = map(lambda args: rename(*args),
+              ((K.map(prob.fz), f"Z_{prob.B}"),
+               (K.map(lambda z: prob.fz(z, prob.R)), f"Z_{prob.R}"),
+               (Model(ROLLS_AVAILABLE=False).p_k, "model"),
+               (Model().p_k, "rolls model"),
+               (GeneralModel().p_k, "general rolls model")
+              ))
+    print(f"\n{10*'-'}\n".join(rvs))
 

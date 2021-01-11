@@ -12,7 +12,7 @@ def norm(l: list, f: float=None) -> list:
     return [x/s for x in l]
 
 def norm_cmf(l: list) -> list:
-    """ Normalizes a list into a cmf by dividing by its largest value. """
+    """ Normalizes a list into a cmf by dividing by its max. """
     return norm(l, max(l))
 
 def nonneg(l: list) -> bool:

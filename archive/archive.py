@@ -45,3 +45,21 @@ print(len(series_char["Utaite"]["chars"]))
 with open("temp.pickle", "wb") as f:
     pickle.dump(series_char, f)
 
+### model.py
+# sophisticated surgery to try to find a systematic way to get closer to 1/8 
+
+            f = 1 - prob.cmf(self.Fz, self.kp)
+            fp = f + self.fz(self.kp)
+            l, r = 0, ROLLS_MAX
+            while l < r:
+                m = (l + r - 1)>>1
+                p = 1/f - self.__sum(f, m) + self.__sum(fp, m)
+                if self.p_r(1)*(1 - fp)*p <= ROLLS_F:
+                    l, r = l, m
+                else:
+                    l, r = m + 1, r
+
+    def __sum(self, x: float, n: int) -> float:
+        """ Computes sum^n_{i = 1} ix(1 - x)^{i - 1}. """
+        return x*(1 + pow(1 - x, n)*(n*(1 - x) - (n + 1)))/(x*x)
+

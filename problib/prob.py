@@ -9,8 +9,6 @@ X is a discrete random variable (r.v.)
 p is its corresponding probability mass function (pmf)
 E[X] is the expected value of X
 """
-# X = [   1,    5,  10,   15,   16,   20,  30,   35,   50,  100]
-# p = [0.05, 0.08, 0.1, 0.12, 0.17, 0.22, 0.1,  0.1, 0.05, 0.01]
 assert sorted(X) == X, "support set must be sorted"
 assert abs(sum(p) - 1) < 10**-3, "not a valid pmf"
 
@@ -20,7 +18,7 @@ N, R, B = len(X), 30, 10
 D = {x: i for i, x in enumerate(X)}
 
 def prefix_sum(l: list) -> list:
-    """ Returns the prefix sum of l """
+    """ Returns the prefix sum of l. """
     prefix = [0]*(len(l) + 1)
     for i in range(len(l)):
         prefix[i + 1] = prefix[i] + l[i]
@@ -32,7 +30,7 @@ def pmf(p: list, u: float) -> float:
 
 def cmf(F: list, u: float) -> float:
     """ Finds the value of the cmf at a value in/not in the underlying r.v. """
-    # use F if u is in the support set, otherwise binary search
+    # use F if u is in the range of the r.v., otherwise binary search
     return F[D[u] + 1] if u in D else F[bisect.bisect(X, u)]
 
 # prefix sum of probability list, aka the cumulative mass function (cmf)
@@ -45,7 +43,10 @@ ev = prefix_sum([X[i]*p[i] for i in range(N)])
 Z, BATCHES = list(X), R//B
 
 # cmf of Z is just the power of each term in the cmf of X
-Fzs = [[pow(v, b) for v in F] for b in range(B + 1)]
+Fzs = [[1]*(N + 1)]
+for i in range(B):
+    Fzs.append([Fzs[-1][i]*F[i] for i in range(N + 1)])
+
 # expected value prefix sum similar to X 
 evzs = [prefix_sum([X[i]*(Fzs[b][i + 1] - Fzs[b][i]) for i in range(N)])
         for b in range(len(Fzs))]
@@ -53,11 +54,11 @@ Fz = Fzs[B]
 
 @lru_cache(maxsize=None)
 def fz(z: float, b: int=B) -> float:
-    """ pmf of Z """
+    """ pmf of Z. """
     return pow(F[D[z] + 1], b) - pow(F[D[z]], b)
 
 def lower(r: int, b: int=B) -> int:
-    """ Returns the largest value n such that n <= r and n % B == 0. """
+    """ Returns the  largest value n such that n <= r and n % B == 0. """
     return r - (r % b)
 
 def upper(r: int, b: int=B) -> int:
@@ -76,7 +77,7 @@ def Var(p: list, rv: list=X) -> float:
 
 def std(p: list, rv: list=X) -> float:
     """ sigma^2 = Var[x] so sigma = standard deviation = sqrt(Var[X]). """
-    return math.sqrt(Var(p))
+    return math.sqrt(Var(p, rv))
 
 ### functions
 

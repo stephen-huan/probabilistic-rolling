@@ -7,6 +7,7 @@ ITERS = 3*10**6
 prob.R, prob.B = 30, 10
 model.ROLLS_AVAILABLE, model.ROLLS_CYCLE = True, 8
 model.ROLLS_F = 1/model.ROLLS_CYCLE
+model_type = model.Model
 
 count_Fr = [0]*(prob.R + 1)
 count_pr = [0]*(prob.R + 1)
@@ -69,7 +70,7 @@ def E(X, iters: int=ITERS) -> float:
     return sum(X() for i in range(iters))/iters
 
 if __name__ == "__main__":
-    m = model.Model(prob.R, prob.B, model.ROLLS_AVAILABLE, model.ROLLS_CYCLE)
+    m = model_type(prob.R, prob.B, model.ROLLS_AVAILABLE, model.ROLLS_CYCLE)
     # adding rolls changes the random variable
     if model.ROLLS_AVAILABLE:
         ev = sum(simulate(m, i) for i in range(ITERS))/ITERS
@@ -93,19 +94,19 @@ if __name__ == "__main__":
         adiff(ev, ev_new, "rolls expected value")
         print(f"using $rolls with a frequency of {fs:.3f}")
         print(f"improves expected value by {ev_new - ev_old:.3f}")
-        sys.exit()
+    # default model with no $rolls
+    else:
+        # whether the theoretical model aligns with the empirical expected value
+        # no way to know whether this "optimal" value is truly optimal however
+        adiff(E(lambda: simulate(m)), prob.Ef(prob.R, prob.B), "expected value")
 
-    # whether the theoretical model aligns with the empirical expected value
-    # no way to know whether this "optimal" value is truly optimal however
-    adiff(E(lambda: simulate(m)), prob.Ef(prob.R, prob.B), "expected value")
-
-    ### testing introspection 
-    # probability of getting to r rolls left
-    fdiff(count_Fr, m.F_r, range(prob.R + 1), "cdf of f", True)
-    # probability of emitting a value at r rolls left
-    fdiff(count_pr, m.p_r, range(prob.R + 1), "pdf of f")
-    # probability of emitting a kakera value of k
-    fdiff(count_k, m.p_k, prob.X, "pdf of k")
-    # expected value of the kakera pmf is the expected value of the model 
-    adiff(prob.E(apply(m.p_k)), prob.Ef(prob.R, prob.B), "pmf k vs E")
+        ### testing introspection 
+        # probability of getting to r rolls left
+        fdiff(count_Fr, m.F_r, range(prob.R + 1), "cdf of f", True)
+        # probability of emitting a value at r rolls left
+        fdiff(count_pr, m.p_r, range(prob.R + 1), "pdf of f")
+        # probability of emitting a kakera value of k
+        fdiff(count_k, m.p_k, prob.X, "pdf of k")
+        # expected value of the kakera pmf is the expected value of the model 
+        adiff(prob.E(apply(m.p_k)), prob.Ef(prob.R, prob.B), "pmf k vs E")
 
