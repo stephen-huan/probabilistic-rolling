@@ -3,6 +3,8 @@ import cmath, math
 
 EPISLON = 10**-6
 
+### fft implementation
+
 def rev_increment(c: int, m: int) -> int:
     """ Increments a reverse binary counter. """
     i = 1 << (m - 1)
@@ -57,6 +59,8 @@ def poly_mult(a: list, b: list) -> list:
     bp = mirror(b + [0]*(n - len(b)) + [0]*n)
     ap, bp = iter_fft(ap), iter_fft(bp)
     return [x.real for x in inv_iter_fft([ap[i]*bp[i] for i in range(len(ap))])]
+
+### probability theory methods
 
 def poly_exp(p: list, k: int) -> list:
     """ Computes p^k, where p is a polynomial and k is an integer. """

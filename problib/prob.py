@@ -1,5 +1,6 @@
 import bisect, sys, math
 from functools import lru_cache
+from .rv import RandomVariable, prefix_sum, query
 from .data import X, p
 sys.setrecursionlimit(10**4)
 
@@ -9,20 +10,12 @@ X is a discrete random variable (r.v.)
 p is its corresponding probability mass function (pmf)
 E[X] is the expected value of X
 """
-assert sorted(X) == X, "support set must be sorted"
-assert abs(sum(p) - 1) < 10**-3, "not a valid pmf"
+K = RandomVariable(X, p, "kakera")
 
 # number of discrete values, number of rolls, number of rolls per batch
 N, R, B = len(X), 30, 10
 # value to index
 D = {x: i for i, x in enumerate(X)}
-
-def prefix_sum(l: list) -> list:
-    """ Returns the prefix sum of l. """
-    prefix = [0]*(len(l) + 1)
-    for i in range(len(l)):
-        prefix[i + 1] = prefix[i] + l[i]
-    return prefix
 
 def pmf(p: list, u: float) -> float:
     """ Finds the value of the pmf at a value in/not in the underlying r.v. """
@@ -69,7 +62,7 @@ def upper(r: int, b: int=B) -> int:
 
 def E(p: list, rv: list=X, f=lambda x: x) -> float:
     """ Expected value of a pmf represented by a list. """
-    return sum(f(rv[i])*p[i] for i in range(len(rv)))
+    return sum(f(x)*p for x, p in zip(rv, p))
 
 def Var(p: list, rv: list=X) -> float:
     """ Var[X] = E[(x - u)^2] = E[X^2] - E[x]^2. """
@@ -81,16 +74,12 @@ def std(p: list, rv: list=X) -> float:
 
 ### functions
 
-def query(prefix: list, i: int, j: int) -> float:
-    """ Finds the sum of a list between two indexes. """
-    return prefix[j + 1] - prefix[i]
-
 def __capped(X: list, p: list, u: float) -> float:
     """ Returns E[X], but with the values capped at a minimum of u. """
     return E(p, X, lambda x: max(x, u))
 
 def capped(X: list, F: "cmf", prefix: list, u: float) -> float:
-    """ Returns E[X] in O(log n). """
+    """ Returns E[max(X, u)] in O(log n). """
     i = bisect.bisect(X, u)
     return u*F[i] + query(prefix, i, N - 1)
 

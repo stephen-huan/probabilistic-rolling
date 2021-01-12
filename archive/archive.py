@@ -63,3 +63,19 @@ with open("temp.pickle", "wb") as f:
         """ Computes sum^n_{i = 1} ix(1 - x)^{i - 1}. """
         return x*(1 + pow(1 - x, n)*(n*(1 - x) - (n + 1)))/(x*x)
 
+### rv.py
+# lazy attribute generation
+
+def lazy(f):
+    """ Decoractor for lazy attribute generation in the context of a class. """
+    @functools.wraps(f)
+    def wrapper(*args, **kwargs):
+        class_, name = args[0], f.__name__
+        temp = getattr(type(class_), name)
+        setattr(type(class_), name, None) # clear property
+        value = f(*args, **kwargs)        # get value from function
+        setattr(class_, name, value)      # replace property with value
+        setattr(type(class_), name, temp) # add back property to class
+        return value                      # return value for initial call
+    return property(wrapper)
+

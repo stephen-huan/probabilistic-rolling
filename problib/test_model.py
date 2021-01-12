@@ -1,6 +1,6 @@
 import random, bisect, sys
 from . import prob, model
-from .testing import norm, apply, adiff, fdiff
+from .testing import apply, adiff, fdiff
 
 random.seed(1)
 ITERS = 3*10**6
@@ -19,6 +19,10 @@ def sample(X: list=prob.X, F: list=prob.F) -> float:
     """ Samples a value from a random variable. """
     p = random.random()
     return X[bisect.bisect(F, p) - 1]
+
+def E(X, iters: int=ITERS) -> float:
+    """ Expected value by repeatedly sampling a random variable. """
+    return sum(X() for i in range(iters))/iters
 
 def simulate(m: model.Model=model.Model(), index: int=0) -> float:
     """ Simulates a game. """
@@ -64,10 +68,6 @@ def simulate(m: model.Model=model.Model(), index: int=0) -> float:
         r -= 1
     # model didn't claim, kakera value of 0
     return 0
-
-def E(X, iters: int=ITERS) -> float:
-    """ Expected value by repeatedly sampling a random variable. """
-    return sum(X() for i in range(iters))/iters
 
 if __name__ == "__main__":
     m = model_type(prob.R, prob.B, model.ROLLS_AVAILABLE, model.ROLLS_CYCLE)

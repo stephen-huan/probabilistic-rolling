@@ -1,7 +1,10 @@
-import bisect, math
+import random, bisect, math
 # library implementing a random variable
+# TODO: absorb testing.py
 
+random.seed(1)
 EPSILON = 10**-3 # permissible distance from 1
+ITERS = 10**6    # iterations for emprical expected value
 
 ### normalization and verification methods
 
@@ -32,6 +35,10 @@ def cmf(l: list, tol: float=EPSILON) -> bool:
 
 ### random variable
 
+def query(prefix: list, i: int, j: int) -> float:
+    """ Finds the sum of a list between two indexes. """
+    return prefix[j + 1] - prefix[i]
+
 def prefix_sum(l: list) -> list:
     """ Returns the prefix sum of l. """
     prefix = [0]*(len(l) + 1)
@@ -43,15 +50,28 @@ class RandomVariable:
 
     """ A random variable. """
 
-    def __init__(self, X: list, p: list, name: str="rv", norm: bool=False):
-        self.X, self.p = X, p       # list of values and list of probabilities
-        self.name, self.p = name, norm(self.p) if norm else self.p
-        self.D = {x: i for i, x in enumerate(X)} # value to index
-        self.F = prefix_sum(self.p) # cmf
+    def __init__(self, X: list, p: list, name: str="rv",
+                 is_cmf: bool=False, normalize: bool=False) -> None:
+        p = (norm_cmf if is_cmf else norm)(p) if normalize else p
+        self.X, self.p, self.name = X, p, name # list of values, probabilities
 
-        assert sorted(X) == list(X), "support set must be sorted"
-        assert pmf(self.p), "not a valid pmf"
-        assert cmf(self.F), "not a valid cmf"
+        if isinstance(X, RandomVariable): # inherit attributes for efficiency
+            for attr in ["__len__", "__iter__", "__getitem__", "D"]:
+                setattr(self, attr, getattr(X, attr))
+        else:
+            self.D = {x: i for i, x in enumerate(X)} # value to index
+            assert sorted(X) == list(X), "support set must be sorted"
+
+        if is_cmf:
+            assert len(X) == len(p) - 1, "values not the same length as cmf"
+            assert cmf(p), "not a valid cmf"
+            self.p, self.F = [p[i + 1] - p[i] for i in range(len(X))], p
+        else:
+            assert len(X) == len(p),     "values not the same length as pmf"
+            assert pmf(p), "not a valid pmf"
+            self.F = prefix_sum(p) # cmf
+
+        self.ev = prefix_sum([x*p for x, p in zip(self, self.p)])
 
     ### Python "magic" class methods
 
@@ -93,7 +113,7 @@ mean = {self.E():.3f} +/- {self.std():.3f} (std)"
 
     def E(self, f=lambda x: x) -> float:
         """ Expected value of a pmf represented by a list. """
-        return sum(f(self.X[i])*self.p[i] for i in range(len(self.X)))
+        return sum(f(x)*p for x, p in zip(self, self.p))
 
     def Var(self) -> float:
         """ Var[X] = E[(x - u)^2] = E[X^2] - E[x]^2. """
@@ -107,6 +127,24 @@ mean = {self.E():.3f} +/- {self.std():.3f} (std)"
         """ Maximum element minus the minimum element. """
         return self[-1] - self[0]
 
+    ### miscellaneous
+
+    def capped(self, u: float) -> float:
+        """ Returns self.E(lambda x: max(x, u)) in O(log n). """
+        i = bisect.bisect(self, u)
+        return u*self.F[i] + query(self.ev, i, len(self.X) - 1)
+
+### sampling
+
+    def sample(self) -> float:
+        """ Samples a value from a random variable. """
+        return self[bisect.bisect(self.F, random.random()) - 1]
+
+def E(rv: RandomVariable, iters: int=ITERS) -> float:
+    """ Expected value by repeatedly sampling a random variable. """
+    f = rv.sample if hasattr(rv, "sample") else rv
+    return sum(f() for _ in range(iters))/iters
+
 if __name__ == "__main__":
     X = [   1,    5,  10,   15,   16,   20,  30,   35,   50,  100]
     p = [0.05, 0.08, 0.1, 0.12, 0.17, 0.22, 0.1,  0.1, 0.05, 0.01]
@@ -118,9 +156,10 @@ if __name__ == "__main__":
     print(rv[1])
 
     print(rv.E(), rv.Var(), rv.std(), rv.range())
+    print(E(rv), rv.sample(), rv.sample(), rv.sample())
 
     X = [ -2,  -1,   1,   2,   3]
     p = [0.1, 0.2, 0.5, 0.1, 0.1]
     rv = RandomVariable(X, p)
-    print(rv.transform(lambda x: x*x))
+    print(repr(rv.transform(lambda x: x*x)))
 

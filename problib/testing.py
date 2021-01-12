@@ -1,35 +1,11 @@
 from . import prob
-# comparing two scalars, comparing two lists, allowed distance from 1 
-EPSILON, LIST_EPS, DIST = 0.1, 0.01, 10**-3
+from .rv import norm, norm_cmf, pmf, cmf, diff
+# comparing two scalars, comparing two lists
+EPSILON, LIST_EPS = 0.1, 0.01
 
 def apply(f, r: range=prob.X) -> list:
     """ Applies a function to a range. """
     return list(map(f, r))
-
-def norm(l: list, f: float=None) -> list:
-    """ Normalizes a list into a pmf by dividing by its sum. """
-    s = sum(l) if f is None else f
-    return [x/s for x in l]
-
-def norm_cmf(l: list) -> list:
-    """ Normalizes a list into a cmf by dividing by its max. """
-    return norm(l, max(l))
-
-def nonneg(l: list) -> bool:
-    """ Whether all the values in a list are positive. """
-    return all(map(lambda x: x >= 0, l))
-
-def pmf(l: list, tol: float=DIST) -> bool:
-    """ Whether a list can be interpreted as a pmf. """
-    return nonneg(l) and diff(sum(l), 1, tol)
-
-def cmf(l: list, tol: float=DIST) -> bool:
-    """ Whether a list can be interpreted as a cmf. """
-    return nonneg(l) and l == sorted(l) and diff(l[-1], 1, tol)
-
-def diff(x: float, y: float, tol: float=EPSILON) -> bool:
-    """ Whether two numbers are sufficiently close. """
-    return abs(x - y) < tol
 
 def adiff(x: float, y: float, s: str, tol: float=EPSILON) -> None:
     """ Asserts that two numbers are sufficiently close. """

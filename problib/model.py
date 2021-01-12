@@ -1,8 +1,7 @@
 import bisect
 from functools import lru_cache
-from . import prob, testing, rv
+from . import prob, rv
 
-K = rv.RandomVariable(prob.X, prob.p, "kakera")
 ROLLS = -1             # declare $rolls reset
 ROLLS_AVAILABLE = True # whether $rolls is allowed
 ROLLS_CYCLE = 8        # how often to use $rolls
@@ -31,7 +30,7 @@ class Model():
             self.kp = prob.X[bisect.bisect(self.Fk, ROLLS_F) - 2]
             assert prob.cmf(self.Fk, self.kp) <= ROLLS_F, "valid cutoff"
             self.rolls_left = 0
-        self.p_k = K.map(self.f)
+        self.p_k = prob.K.map(self.f)
         self.reset()
 
     def reset(self) -> None:
@@ -165,9 +164,9 @@ class GeneralModel(Model):
             f = prob.cmf(self.Fz, self.kp)
             assert self.p_r(1)*f/(1 - f) <= ROLLS_F, "valid cutoff"
 
-            pmf = rv.norm([self.fz(k)*(k > self.kp) for k in K])
-            self.p_last = rv.RandomVariable(K, pmf)
-            self.p_k = K.map(self.f)
+            pmf = rv.norm([self.fz(k)*(k > self.kp) for k in prob.K])
+            self.p_last = rv.RandomVariable(prob.K, pmf)
+            self.p_k = prob.K.map(self.f)
 
     def rolls(self) -> None:
         """ Update the model's parameters if it uses $rolls. """
@@ -180,16 +179,33 @@ def rename(X: rv.RandomVariable, name: str) -> str:
     X.name = name
     return str(X)
 
+def argmax(l: list, f, minimize: bool=False) -> tuple:
+    """ Returns the argmax of f on l, x', and its value, f(x'). """
+    x = (min if minimize else max)(l, key=f)
+    return x, f(x)
+
 if __name__ == "__main__":
-    print(K)
-    print(f"min: {K[0]}, max: {K[-1]}, range: {K.range()}")
+    print(prob.K)
+    print(f"min: {prob.K[0]}, max: {prob.K[-1]}, range: {prob.K.range()}")
     print(10*"-")
     rvs = map(lambda args: rename(*args),
-              ((K.map(prob.fz), f"Z_{prob.B}"),
-               (K.map(lambda z: prob.fz(z, prob.R)), f"Z_{prob.R}"),
+              ((prob.K.map(prob.fz), f"Z_{prob.B}"),
+               (prob.K.map(lambda z: prob.fz(z, prob.R)), f"Z_{prob.R}"),
                (Model(ROLLS_AVAILABLE=False).p_k, "model"),
                (Model().p_k, "rolls model"),
                (GeneralModel().p_k, "general rolls model")
               ))
     print(f"\n{10*'-'}\n".join(rvs))
+
+    ### is at most one roll per claim justified? 
+    rv1, rv2, rv3 = [prob.K.map(lambda z: prob.fz(z, i*prob.B))
+                     for i in range(1, 4)]
+    print(sum(rv2(k) for k in rv3))
+    k1, evdiff = argmax(rv3, lambda k: rv3.capped(k) - rv2.capped(k))
+    # equivalent to sum(max(k - k2, 0)*rv1(k) for k in rv1)
+    k2, mindiff = argmax(range(prob.K[0], Model().kp + 1),
+                         lambda k: rv1.capped(k) - k, minimize=True)
+    print(k1, k2)
+    print(f" best expected gain from second use of $rolls: {evdiff:.3f}")
+    print(f"worst expected gain from  first use of $rolls: {mindiff:.3f}")
 

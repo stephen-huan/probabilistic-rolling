@@ -4,3 +4,7 @@
 disable_list.txt
 antidisable_list.txt
 *out.txt
+
+# I assume Luke wants to put this in his own repository...
+problib/data/main.py
+
