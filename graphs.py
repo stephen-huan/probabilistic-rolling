@@ -1,13 +1,13 @@
 import matplotlib.pyplot as plt
 import numpy as np
 from problib.prob import *
-from problib import model, convolve
+from problib import model, convolve, test_model
 
 ROLLS = True  # whether to include the $rolls model
 STEM  = False # whether to use a stem plot
 
 graphs = [None] + [0]*20
-graphs[12] = 1
+graphs[13] = 1
 fig = plt.figure(tight_layout=True)
 
 def graph_rv(X: list, p: list, i: int=0, label: str=None) -> None:
@@ -201,6 +201,23 @@ if graphs[g]:
     plt.xlim(20, 100)
     plt.title("Average of X after n samples")
     plt.legend()
+    plt.savefig(f"graphs/graph{g:02}.png")
+    plt.show()
+
+### Graph 13: average value over time
+g = 13
+if graphs[g]:
+    N = 10**4
+    import random
+    random.seed(7)
+    y = [0]
+    for i in range(N):
+        v = test_model.simulate(index=i)
+        y.append((y[-1]*i + v)/len(y))
+    plt.plot(range(1, N + 1), y[1:])
+    ev = model.Model().p_k.E()
+    plt.plot(range(1, N + 1), [ev]*N)
+    plt.title("Average Value over Games")
     plt.savefig(f"graphs/graph{g:02}.png")
     plt.show()
 
