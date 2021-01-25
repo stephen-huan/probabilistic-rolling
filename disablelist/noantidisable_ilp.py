@@ -28,7 +28,8 @@ A = M if DISABLE_SERIES else 0
 ### model and variables
 m = Model(sense=MAXIMIZE, solver_name=CBC)
 # lower and upper bounds on the denominator for Glover linearization 
-L, U = 0, sum(w)
+# upper bound determined with linear programming
+L, U = 0, 0.0002
 # also double each list of variables, first are binary, second continuous 
 # whether the ith bundle/series is disabled
 x = [m.add_var(name=f"x{i}", var_type=BINARY) for i in range(N + A)]
@@ -36,12 +37,12 @@ x = [m.add_var(name=f"x{i}", var_type=BINARY) for i in range(N + A)]
 y = [[m.add_var(name=f"y{i}", var_type=BINARY) for i in range(M)],
      [m.add_var(name=f"yp{i}", lb=L, ub=U) for i in range(M)]]
 # denominator for the Charnes-Cooper transformation
-d = m.add_var(name="denominator", lb=0, ub=1)
+d = m.add_var(name="denominator", lb=L, ub=U)
 
 ### constraints
 # can only disable up to K = 10 bundles, exactly K is faster but less accurate
 # change to <= K if it gives a better solution
-m += xsum(x) <= NUM_DISABLE, "number_disable"
+m += xsum(x) == NUM_DISABLE, "number_disable"
 # total sum of bundle sizes less than C = 20,000
 m += xsum(s[i]*x[i] for i in range(len(x))) <= OVERLAP, "capacity_limit"
 for i in range(M):

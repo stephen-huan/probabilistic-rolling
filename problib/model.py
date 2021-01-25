@@ -79,7 +79,7 @@ class Model():
 
     def __buy(self, r: int, k: int, b: int) -> float:
         """ Finds the price at which we are indifferent to buying b rolls. """
-        return self.Ef(r + b) - self.status_quo(r, k)
+        return max(self.Ef(r + b) - self.status_quo(r, k), 0)
 
     def buy(self, b: int=None) -> float:
         """ Calls buy for the current parameters of the model. """
@@ -200,8 +200,7 @@ if __name__ == "__main__":
     ### is at most one roll per claim justified? 
     rv1, rv2, rv3 = [prob.K.map(lambda z: prob.fz(z, i*prob.B))
                      for i in range(1, 4)]
-    print(sum(rv2(k) for k in rv3))
-    k1, evdiff = argmax(rv3, lambda k: rv3.capped(k) - rv2.capped(k))
+    k1, evdiff = argmax(rv3, lambda k: rv2.capped(k) - rv1.capped(k))
     # equivalent to sum(max(k - k2, 0)*rv1(k) for k in rv1)
     k2, mindiff = argmax(range(prob.K[0], Model().kp + 1),
                          lambda k: rv1.capped(k) - k, minimize=True)
