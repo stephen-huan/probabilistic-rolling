@@ -10,8 +10,7 @@ and extended to character-level data by [Avik Rao](https://github.com/AvikRao).
 
 See Luke's repository [here](https://github.com/lthistle/mudae-optimizer).
 
-TODO:
-- White paper
+[White paper on optimization](https://github.com/stephen-huan/cs-lectures/blob/master/probability-theory/gacha-optimization/writeup.pdf)
 
 ### Installing and Running
 
