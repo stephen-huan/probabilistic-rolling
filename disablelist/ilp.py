@@ -30,15 +30,22 @@ m += xsum(s[i]*x[i] for i in range(len(x))) <= OVERLAP, "capacity_limit"
 # can only antidisable up to A = 500 series
 m += xsum(z) <= NUM_ANTIDISABLE, "number_antidisable"
 for i in range(M):
-    series = series_list[i]
+    yi, name = y[0][i], series_list[i]
     bundles = [x[j] for j in range(N) if series in bundle_dict[bundle_list[j]]]
     # the psuedo-bundle containing just the series
     bundles.append(x[i + N])
     # if yi is included, at least one bundle needs to have it
-    m += xsum(bundles) >= y[i], f"inclusion{i}"
+    m += xsum(bundles) >= yi, f"inclusion{i}"
     # forcing term, comment out if the metric naturally incentivizes forcing
-    for b in bundles:
-        m += y[i] >= b, f"forcing{i}_{b.name}"
+    if len(bundles) <= 3:
+        for b in bundles:
+            m += yi >= b, f"forcing{i}_{b.name}"
+    else:
+        # create yp = (x1 + x2 + ... + xj) yi
+        g, L1, U1 = xsum(bundles), 0, len(bundles)
+        yp = m.add_var(name=f"forcing{i}", lb=L1, ub=U1)
+        m += yp <= U1*yi, f"forcing{i}_0r"
+        m += yp == g, "forcing{i}_final"
 
     # shouldn't antidisable a series if it isn't disabled
     m += z[i] <= y[i], f"antidisable{i}"

@@ -9,7 +9,7 @@ specific problem is that of mixed-integer linear fractional programming,
 solved with the reformulation-linerization method:
 https://optimization.mccormick.northwestern.edu/index.php/Mixed-integer_linear_fractional_programming_(MILFP)
 """
-NUM_BUNDLES = 10                           # reduce number of variables
+NUM_BUNDLES = 30                           # reduce number of variables
 DISABLE_SERIES, ANTIDISABLE = False, True  # whether to [anti]disable series
 # number of bundles, number of series
 N, M = len(bundle_list), len(series_list)
@@ -51,25 +51,37 @@ m += xsum(s[i]*x[i] for i in range(len(x))) <= OVERLAP, "capacity_limit"
 # can only antidisable up to A = 500 series
 m += xsum(z[0]) <= NUM_ANTIDISABLE, "number_antidisable"
 for i in range(M):
-    name = series_list[i]
+    yi, name = y[0][i], series_list[i]
     bundles = [x[j] for j in range(N) if name in bundle_dict[bundle_list[j]]]
     if DISABLE_SERIES:
         # the psuedo-bundle containing just the series
         bundles.append(x[i + N])
     # if yi is included, at least one bundle needs to have it
-    m += xsum(bundles) >= y[0][i], f"inclusion{i}"
+    m += xsum(bundles) >= yi, f"inclusion{i}"
     # forcing term, comment out if the metric naturally incentivizes forcing
-    for b in bundles:
-        m += y[0][i] >= b, f"forcing{i}_{b.name}"
+    if len(bundles) <= 3:
+        for b in bundles:
+            m += yi >= b, f"forcing{i}_{b.name}"
+    else:
+        # create yp = (x1 + x2 + ... + xj) yi
+        g, L1, U1 = xsum(bundles), 0, len(bundles)
+        yp = m.add_var(name=f"forcing{i}", lb=L1, ub=U1)
+        # m += L1*yi <= yp, f"forcing{i}_0l"
+        m += yp <= U1*yi, f"forcing{i}_0r"
+        # m += g - U1*(1 - yi) <= yp, f"forcing{i}_1l"
+        # m += yp <= g - L1*(1 - yi), f"forcing{i}_1r"
+        # m += yp >= g, "forcing{i}_final"
+        m += yp == g, "forcing{i}_final"
 
     # shouldn't antidisable a series if it isn't disabled
     m += z[0][i] <= y[0][i], f"antidisable{i}"
+
 # Glover linearization constraints in order to force
 # the continuous variables to act like a product 
 for k, var_list in enumerate([y, z]):
     for i in range(len(var_list[0])):
         xi, zi = var_list[0][i], var_list[1][i]
-        m += L*xi <= zi, f"x{k}{i}_0l"
+        # m += L*xi <= zi, f"x{k}{i}_0l"
         m += zi <= U*xi, f"x{k}{i}_0r"
         m += d - U*(1 - xi) <= zi, f"x{k}{i}_1l"
         m += zi <= d - L*(1 - xi), f"x{k}{i}_1r"

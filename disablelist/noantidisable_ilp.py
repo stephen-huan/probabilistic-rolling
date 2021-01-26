@@ -9,7 +9,7 @@ specific problem is that of mixed-integer linear fractional programming,
 solved with the reformulation-linerization method:
 https://optimization.mccormick.northwestern.edu/index.php/Mixed-integer_linear_fractional_programming_(MILFP)
 """
-NUM_BUNDLES = 50       # reduce number of variables
+NUM_BUNDLES = 30       # reduce number of variables
 DISABLE_SERIES = False # whether to disable series
 # number of bundles, number of series
 N, M = len(bundle_list), len(series_list)
@@ -46,23 +46,29 @@ m += xsum(x) == NUM_DISABLE, "number_disable"
 # total sum of bundle sizes less than C = 20,000
 m += xsum(s[i]*x[i] for i in range(len(x))) <= OVERLAP, "capacity_limit"
 for i in range(M):
-    name = series_list[i]
+    yi, name = y[0][i], series_list[i]
     bundles = [x[j] for j in range(N) if name in bundle_dict[bundle_list[j]]]
     if DISABLE_SERIES:
         # the psuedo-bundle containing just the series
         bundles.append(x[i + N])
     # if yi is included, at least one bundle needs to have it
-    m += xsum(bundles) >= y[0][i], f"inclusion{i}"
+    m += xsum(bundles) >= yi, f"inclusion{i}"
     # forcing term, comment out if the metric naturally incentivizes forcing
-    for b in bundles:
-        m += y[0][i] >= b, f"forcing{i}_{b.name}"
+    if len(bundles) <= 3:
+        for b in bundles:
+            m += yi >= b, f"forcing{i}_{b.name}"
+    else:
+        # create yp = (x1 + x2 + ... + xj) yi
+        g, L1, U1 = xsum(bundles), 0, len(bundles)
+        yp = m.add_var(name=f"forcing{i}", lb=L1, ub=U1)
+        m += yp <= U1*yi, f"forcing{i}_0r"
+        m += yp == g, "forcing{i}_final"
 
 # Glover linearization constraints in order to force
 # the continuous variables to act like a product 
 for k, var_list in enumerate([y]):
     for i in range(len(var_list[0])):
         xi, zi = var_list[0][i], var_list[1][i]
-        m += L*xi <= zi, f"x{k}{i}_0l"
         m += zi <= U*xi, f"x{k}{i}_0r"
         m += d - U*(1 - xi) <= zi, f"x{k}{i}_1l"
         m += zi <= d - L*(1 - xi), f"x{k}{i}_1r"
