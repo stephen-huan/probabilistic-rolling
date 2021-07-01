@@ -56,23 +56,14 @@ for i in range(M):
     if DISABLE_SERIES:
         # the psuedo-bundle containing just the series
         bundles.append(x[i + N])
+    if len(bundles) == 0:
+        # if no bundles have it, can't disable
+        m += yi == 0
+        continue
     # if yi is included, at least one bundle needs to have it
     m += xsum(bundles) >= yi, f"inclusion{i}"
-    # forcing term, comment out if the metric naturally incentivizes forcing
-    if len(bundles) <= 3:
-        for b in bundles:
-            m += yi >= b, f"forcing{i}_{b.name}"
-    else:
-        # create yp = (x1 + x2 + ... + xj) yi
-        g, L1, U1 = xsum(bundles), 0, len(bundles)
-        yp = m.add_var(name=f"forcing{i}", lb=L1, ub=U1)
-        # m += L1*yi <= yp, f"forcing{i}_0l"
-        m += yp <= U1*yi, f"forcing{i}_0r"
-        # m += g - U1*(1 - yi) <= yp, f"forcing{i}_1l"
-        # m += yp <= g - L1*(1 - yi), f"forcing{i}_1r"
-        # m += yp >= g, "forcing{i}_final"
-        m += yp == g, "forcing{i}_final"
-
+    # forcing term, comment out if the objective incentivizes forcing
+    m += xsum(bundles) <= len(bundles)*yi, f"forcing{i}"
     # shouldn't antidisable a series if it isn't disabled
     m += z[0][i] <= y[0][i], f"antidisable{i}"
 
@@ -103,6 +94,7 @@ if __name__ == "__main__":
     m.emphasis = 2   # emphasize optimality
     m.preprocess = 1 # don't preprocess if it introduces error
     status = m.optimize()
+
     disable_list = [bundle_list[i] for i in range(N) if x[i].x >= 0.99] + \
         [series_list[i - N] for i in range(N, N + A) if x[i].x >= 0.99]
     antidisable_list = [series_list[i] for i in range(M) if z[0][i].x >= 0.99]
